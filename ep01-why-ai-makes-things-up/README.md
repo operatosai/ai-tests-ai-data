@@ -1,5 +1,7 @@
 # Episode 1: Why does AI make things up?
 
+Video: https://youtu.be/8n_6SiOXYXk
+
 We asked three free AI models five questions about things that **do not exist**, plus one real question as a control.
 Each question was asked 3 times, with and without the sentence *"If you are not sure, say I don't know."*
 

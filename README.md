@@ -5,6 +5,6 @@ Every number said in an episode comes from a test you can read here, answer by a
 
 | Episode | Folder |
 |---|---|
-| 1. Why does AI make things up? | [ep01-why-ai-makes-things-up](ep01-why-ai-makes-things-up/) |
+| 1. [Why does AI make things up?](https://youtu.be/8n_6SiOXYXk) | [ep01-why-ai-makes-things-up](ep01-why-ai-makes-things-up/) |
 
 Found a mistake in how we counted? Open an issue. We will fix it and say so.
