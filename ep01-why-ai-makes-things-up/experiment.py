@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Echo Lab, episode 1, "Why does AI make things up?": a real test on local models (Ollama).
+"""AI Tests AI, episode 1, "Why does AI make things up?": a real test on local models (Ollama).
 Trap questions about things that DO NOT EXIST (we made them up) plus one real control question.
 Two conditions: the question only; the question + "If you are not sure, say I don't know."
 Output: one line per answer. Labeling (invented / caught) was done by hand afterwards.
