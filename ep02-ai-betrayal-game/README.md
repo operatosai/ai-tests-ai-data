@@ -1,6 +1,6 @@
 # Episode 2: One AI Robbed Its Partner 19 Times in a Row
 
-Video: __LIEN_VIDEO__
+Video: https://youtu.be/6PycNwG4Zgs
 
 Three AIs played a repeated prisoner's dilemma ("SHARE or STEAL") against each other and against copies of themselves.
 **14,160 decisions** in total, every one of them here: 1,200 are the moves of two fixed robots, the other 12,960 were made by the AIs, each with the one-sentence reason it gave. 0 unreadable answers.
