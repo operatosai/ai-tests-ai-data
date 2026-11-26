@@ -1,6 +1,6 @@
 # Episode 3: Claude Models Build Video Games
 
-Video: __LIEN_VIDEO__
+Video: https://youtu.be/7PwZnmrxuhU
 
 Claude Opus, Sonnet and Haiku (5.5 family) got the same brief (`brief.txt`): one self-contained HTML arcade game about collecting glowing orbs.
 - **Round 1:** 3 attempts per model (9 games).
