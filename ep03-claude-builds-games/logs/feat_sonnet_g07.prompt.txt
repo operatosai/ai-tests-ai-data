@@ -1,0 +1,45 @@
+Below is a unified diff between two consecutive versions of a small HTML arcade game. Read ONLY the diff. List the player-visible features/mechanics ADDED and REMOVED (plain text, one short line each; ignore refactors). Then answer with a final line exactly: COUNTS added=<int> removed=<int>
+
+--- 
++++ 
+@@ -16,3 +16,3 @@
+   const W = cv.width, H = cv.height;
+-  const WIN_SCORE = 40, ORB_LIFE = 12, MAX_HAZ = 14, TOP = 80;
++  const WIN_SCORE = 40, ORB_LIFE = 14, MAX_HAZ = 14, TOP = 80;
+   window.gameState = { score: 0, state: "menu" };
+@@ -50,4 +50,4 @@
+     combo = 0; comboT = 0; dash = 0; dashCd = 0; paused = false; newBest = false; lvlFlash = 0; lastLvl = 1;
+-    for (let i = 0; i < 3; i++) spawnOrb();
+-    for (let i = 0; i < 2; i++) queueHazard(1.5 + i * 1.2);
++    for (let i = 0; i < 3; i++) { spawnOrb(); orbs[i].life += i * 3; orbs[i].max = orbs[i].life; }
++    for (let i = 0; i < 2; i++) queueHazard(2.5 + i * 2);
+   }
+@@ -90,4 +90,4 @@
+   function spawnHazard(p) {
+-    const diff = 1 + time / 20;
+-    const sp = (70 + Math.random() * 50) * Math.min(diff, 3.2) * (p.chaser ? 0.7 : 1);
++    const diff = 1 + time / 25;
++    const sp = (65 + Math.random() * 45) * Math.min(diff, 3) * (p.chaser ? 0.7 : 1);
+     const a = Math.atan2(player.y - p.y, player.x - p.x) + (Math.random() - 0.5) * (p.chaser ? 0.3 : 1.2);
+@@ -147,3 +147,3 @@
+   function loseLife() {
+-    lives--; invuln = 1.5; shake = 10; combo = 0;
++    lives--; invuln = 2; shake = 10; combo = 0;
+     burst(player.x, player.y, '#f55', 25);
+@@ -190,3 +190,3 @@
+     spawnT += dt;
+-    const interval = Math.max(0.8, 3.6 - time * 0.04);
++    const interval = Math.max(0.9, 3.8 - time * 0.04);
+     if (spawnT > interval) { spawnT = 0; queueHazard(); }
+@@ -237,3 +237,3 @@
+       if (h.y < TOP + h.r && h.vy < 0 || h.y > H - h.r && h.vy > 0) h.vy *= -1;
+-      if (invuln <= 0 && dash <= 0 && Math.hypot(h.x - player.x, h.y - player.y) < h.r * 0.85 + player.r * 0.8) {
++      if (invuln <= 0 && dash <= 0 && Math.hypot(h.x - player.x, h.y - player.y) < h.r * 0.8 + player.r * 0.75) {
+         loseLife();
+@@ -312,4 +312,4 @@
+         glowCircle(o.x, o.y, o.r + Math.sin(o.ph) * 2, col, 25);
+-        ctx.strokeStyle = o.life < 2 ? '#f66' : col; ctx.lineWidth = 2; ctx.globalAlpha *= 0.7;
+-        ctx.beginPath(); ctx.arc(o.x, o.y, o.r + 8, -Math.PI / 2, -Math.PI / 2 + 6.283 * Math.max(0, o.life / o.max)); ctx.stroke();
++        ctx.strokeStyle = o.life < 4 ? '#f66' : col; ctx.lineWidth = 3;
++        ctx.beginPath(); ctx.arc(o.x, o.y, o.r + 9, -Math.PI / 2, -Math.PI / 2 + 6.283 * Math.max(0, o.life / o.max)); ctx.stroke();
+       }

@@ -1,0 +1,225 @@
+Below is a unified diff between two consecutive versions of a small HTML arcade game. Read ONLY the diff. List the player-visible features/mechanics ADDED and REMOVED (plain text, one short line each; ignore refactors). Then answer with a final line exactly: COUNTS added=<int> removed=<int>
+
+--- 
++++ 
+@@ -43,2 +43,5 @@
+   const COMBO_WINDOW = 1.5;   // seconds allowed between pickups to keep a combo
++  const DASH_SPEED = 480;     // px/s during a dasher lunge (faster than the player)
++  const DASH_WIND = 0.6;      // telegraph time before a lunge
++  const DASH_LUNGE = 0.5;     // lunge duration
+ 
+@@ -60,2 +63,5 @@
+   let stats = { orbs: 0, smashed: 0 };
++  let muted = false;          // M toggles sound
++  let lastDanger = 1;         // to announce danger level-ups
++  let newBest = false;        // set when the last run beat the saved best
+ 
+@@ -95,2 +101,3 @@
+   function tone(freq, dur = 0.12, type = 'sine', vol = 0.15, slideTo = null, delay = 0) {
++    if (muted) return;
+     const ac = ensureAudio();
+@@ -117,2 +124,4 @@
+     hit: () => tone(220, 0.5, 'sawtooth', 0.18, 40),
++    dash: () => tone(180, 0.22, 'square', 0.07, 520),
++    danger: () => { tone(330, 0.25, 'sawtooth', 0.08, 660); tone(495, 0.3, 'triangle', 0.1, null, 0.12); },
+     start: () => [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.12, 'square', 0.07, null, i * 0.07)),
+@@ -144,5 +153,9 @@
+     const seekers = hazards.filter(h => h.type === 'seeker').length;
+-    const seeker = elapsed > 25 && seekers < 2 && Math.random() < 0.3;
++    const dashers = hazards.filter(h => h.type === 'dasher').length;
++    const r = Math.random();
++    const type = elapsed > 25 && seekers < 2 && r < 0.3 ? 'seeker'
++      : elapsed > 20 && dashers < 2 && r < 0.45 ? 'dasher'
++      : 'bouncer';
+     let x, y, tries = 0;
+-    if (seeker) {
++    if (type === 'seeker') {
+       // Seekers enter from outside the screen so they never pop in next to the player
+@@ -161,3 +174,3 @@
+     hazards.push({
+-      type: seeker ? 'seeker' : 'bouncer',
++      type,
+       x, y, r: 14,
+@@ -167,4 +180,51 @@
+       age: 0,
+-      closeCd: 0
++      closeCd: 0,
++      // dasher-only state: 'drift' -> 'wind' (telegraph) -> 'lunge' -> 'drift'
++      phase: 'drift',
++      t: 1 + Math.random() * 1.5,
++      tx: 0, ty: 0,            // locked aim point during wind-up
++      lx: 0, ly: 0             // lunge direction
+     });
++  }
++
++  function moveDasher(h, dt) {
++    h.t -= dt;
++    if (h.phase === 'drift') {
++      const sp = 70 + Math.min(elapsed, 120) * 0.35;   // slow drift, creeps up over time
++      h.x += Math.cos(h.a) * sp * dt;
++      h.y += Math.sin(h.a) * sp * dt;
++      if (h.x < h.r) { h.x = h.r; h.a = Math.PI - h.a; }
++      if (h.x > W - h.r) { h.x = W - h.r; h.a = Math.PI - h.a; }
++      if (h.y < h.r) { h.y = h.r; h.a = -h.a; }
++      if (h.y > H - h.r) { h.y = H - h.r; h.a = -h.a; }
++      if (h.t <= 0) {
++        // Lock the aim point now so the telegraph is fair: the player can step out of the line
++        h.phase = 'wind';
++        h.t = DASH_WIND;
++        h.tx = player.x;
++        h.ty = player.y;
++        sfx.dash();
++      }
++    } else if (h.phase === 'wind') {
++      if (h.t <= 0) {
++        const dx = h.tx - h.x, dy = h.ty - h.y, d = Math.hypot(dx, dy) || 1;
++        h.lx = dx / d;
++        h.ly = dy / d;
++        h.phase = 'lunge';
++        h.t = DASH_LUNGE;
++      }
++    } else { // lunge
++      h.x += h.lx * DASH_SPEED * dt;
++      h.y += h.ly * DASH_SPEED * dt;
++      let hitWall = false;
++      if (h.x < h.r) { h.x = h.r; hitWall = true; }
++      if (h.x > W - h.r) { h.x = W - h.r; hitWall = true; }
++      if (h.y < h.r) { h.y = h.r; hitWall = true; }
++      if (h.y > H - h.r) { h.y = H - h.r; hitWall = true; }
++      if (h.t <= 0 || hitWall) {
++        h.phase = 'drift';
++        h.t = 2 + Math.random() * 1.2;
++        h.a = Math.random() * Math.PI * 2;
++      }
++    }
+   }
+@@ -190,2 +250,4 @@
+     comboT = 0;
++    lastDanger = 1;
++    newBest = false;
+     stats = { orbs: 0, smashed: 0 };
+@@ -210,2 +272,3 @@
+     paused = false;
++    newBest = score > best && score > 0;
+     best = Math.max(best, score);
+@@ -280,2 +343,10 @@
+ 
++    // Announce each danger level-up so the ramp is visible
++    const dl = dangerLevel();
++    if (dl !== lastDanger) {
++      lastDanger = dl;
++      popups.push({ x: W / 2, y: H / 2 - 60, text: `DANGER ${dl}`, life: 1.6, rgb: '255,122,160' });
++      sfx.danger();
++    }
++
+     // Spawn: hazard count grows with time; orbs are kept topped up
+@@ -289,3 +360,3 @@
+ 
+-    // Hazards move; speed ramps with time (gentler start than before)
++    // Hazards move; speed ramps with time
+     const bounceSpeed = Math.min(60 + elapsed * 2.5, 240);
+@@ -303,3 +374,3 @@
+         if (h.y > H - h.r) { h.y = H - h.r; h.a = -h.a; }
+-      } else {
++      } else if (h.type === 'seeker') {
+         const ddx = player.x - h.x, ddy = player.y - h.y;
+@@ -308,2 +379,4 @@
+         h.y += ddy / d * seekSpeed * dt;
++      } else {
++        moveDasher(h, dt);
+       }
+@@ -447,4 +520,40 @@
+ 
++  function drawDasher(h) {
++    const color = '#b6ff3c';
++    const p = (Math.sin(performance.now() / 60) + 1) / 2;
++    ctx.save();
++    ctx.globalAlpha = Math.min(1, h.age / FADE_IN);
++    // Telegraph: a dashed aim line and a pulsing ring while winding up
++    if (h.phase === 'wind') {
++      ctx.strokeStyle = `rgba(182,255,60,${0.3 + p * 0.5})`;
++      ctx.lineWidth = 2;
++      ctx.setLineDash([6, 6]);
++      ctx.beginPath(); ctx.moveTo(h.x, h.y); ctx.lineTo(h.tx, h.ty); ctx.stroke();
++      ctx.setLineDash([]);
++      ctx.beginPath(); ctx.arc(h.x, h.y, h.r * 2 + p * 6, 0, Math.PI * 2); ctx.stroke();
++    }
++    let ang = h.spin;
++    if (h.phase === 'wind') ang = Math.atan2(h.ty - h.y, h.tx - h.x);
++    else if (h.phase === 'lunge') ang = Math.atan2(h.ly, h.lx);
++    ctx.translate(h.x, h.y);
++    ctx.rotate(ang);
++    ctx.shadowColor = color;
++    ctx.shadowBlur = 18;
++    ctx.fillStyle = color;
++    ctx.beginPath();
++    ctx.moveTo(h.r * 1.7, 0);
++    ctx.lineTo(-h.r * 1.1, h.r * 1.1);
++    ctx.lineTo(-h.r * 0.5, 0);
++    ctx.lineTo(-h.r * 1.1, -h.r * 1.1);
++    ctx.closePath();
++    ctx.fill();
++    ctx.shadowBlur = 0;
++    ctx.fillStyle = 'rgba(20,30,0,0.6)';
++    ctx.beginPath(); ctx.arc(-h.r * 0.1, 0, h.r * 0.35, 0, Math.PI * 2); ctx.fill();
++    ctx.restore();
++  }
++
+   function drawHazards() {
+     for (const h of hazards) {
++      if (h.type === 'dasher') { drawDasher(h); continue; }
+       const color = h.type === 'seeker' ? '#ff9a3c' : '#ff2d6f';
+@@ -573,2 +682,6 @@
+     ctx.fillText(`GOAL ${WIN_SCORE}`, W - 16, 42);
++    if (muted) {
++      ctx.fillStyle = 'rgba(255,255,255,0.45)';
++      ctx.fillText('SOUND OFF (M)', W - 16, 62);
++    }
+ 
+@@ -599,13 +712,15 @@
+     dim(0.6);
+-    glowText('ORB RUNNER', W / 2, 110, 64, '#5ff0ff');
+-    text('Collect glowing orbs to score. Gold is worth 5 (x combo).', W / 2, 190, 17, '#cfe');
+-    text('Chain pickups quickly for a combo multiplier (up to x4).', W / 2, 216, 17, '#cfe');
+-    text('Dodge spinning hazards. Skim past them for a close-call bonus.', W / 2, 242, 17, '#cfe');
+-    text('Violet orbs grant a shield that smashes hazards for points.', W / 2, 268, 17, '#cbb8ff');
+-    text(`Reach ${WIN_SCORE} points to win.`, W / 2, 298, 17, '#ffd23f');
+-
+-    text('CONTROLS', W / 2, 344, 16, '#8ff');
+-    text('Move: Arrow keys / WASD, or move the mouse', W / 2, 370, 16);
+-    text('Pause: P or Esc (pauses automatically when you leave the tab)', W / 2, 398, 16);
+-    text('Start / restart: Enter, Space, or click', W / 2, 426, 16);
++    glowText('ORB RUNNER', W / 2, 100, 64, '#5ff0ff');
++    text('Collect glowing orbs to score. Gold is worth 5 (x combo).', W / 2, 176, 17, '#cfe');
++    text('Chain pickups quickly for a combo multiplier (up to x4).', W / 2, 202, 17, '#cfe');
++    text('Dodge spinners and orange chasers. Skim past them for a close-call bonus.', W / 2, 228, 17, '#cfe');
++    text('Lime dashers flash a warning line, then lunge. Step out of the line!', W / 2, 254, 17, '#d8ff9a');
++    text('Violet orbs grant a shield that smashes hazards for points.', W / 2, 280, 17, '#cbb8ff');
++    text(`Reach ${WIN_SCORE} points to win.`, W / 2, 310, 17, '#ffd23f');
++
++    text('CONTROLS', W / 2, 352, 16, '#8ff');
++    text('Move: Arrow keys / WASD, or move the mouse', W / 2, 378, 16);
++    text('Pause: P or Esc (pauses automatically when you leave the tab)', W / 2, 404, 16);
++    text('Sound on/off: M', W / 2, 430, 16);
++    text('Start / restart: Enter, Space, or click', W / 2, 456, 16);
+ 
+@@ -613,3 +728,3 @@
+     ctx.globalAlpha = pulseAlpha();
+-    glowText('Press ENTER / SPACE or CLICK to start', W / 2, 510, 22, '#ffffff');
++    glowText('Press ENTER / SPACE or CLICK to start', W / 2, 530, 22, '#ffffff');
+     ctx.restore();
+@@ -623,2 +738,3 @@
+     text(`Orbs collected: ${stats.orbs}   Hazards smashed: ${stats.smashed}`, W / 2, 345, 16, '#8ff');
++    if (newBest) glowText('NEW BEST!', W / 2, 380, 24, '#ffd23f');
+     if (cooldown <= 0) {
+@@ -626,3 +742,3 @@
+       ctx.globalAlpha = pulseAlpha();
+-      text('Press ENTER / SPACE or CLICK to try again', W / 2, 415, 20, '#ffffff');
++      text('Press ENTER / SPACE or CLICK to try again', W / 2, 425, 20, '#ffffff');
+       ctx.restore();
+@@ -699,2 +815,5 @@
+       if (state === 'playing') togglePause();
++    }
++    if (e.code === 'KeyM' && !e.repeat) {
++      muted = !muted;
+     }

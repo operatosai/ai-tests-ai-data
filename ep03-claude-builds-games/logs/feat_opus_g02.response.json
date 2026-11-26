@@ -1,0 +1,103 @@
+{
+ "duration_api_ms": 11571,
+ "stop_reason": "end_turn",
+ "session_id": "52d926e3-9f63-4b9d-8ccf-b5b6d0dbd652",
+ "total_cost_usd": 0.0033723,
+ "usage": {
+  "input_tokens": 2,
+  "cache_creation_input_tokens": 11218,
+  "cache_read_input_tokens": 0,
+  "output_tokens": 2257,
+  "output_tokens_details": {
+   "thinking_tokens": 1951
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 11218,
+   "ephemeral_5m_input_tokens": 0
+  },
+  "inference_geo": "global",
+  "iterations": [
+   {
+    "input_tokens": 2,
+    "output_tokens": 2257,
+    "cache_read_input_tokens": 0,
+    "cache_creation_input_tokens": 11218,
+    "cache_creation": {
+     "ephemeral_5m_input_tokens": 0,
+     "ephemeral_1h_input_tokens": 11218
+    },
+    "type": "message"
+   }
+  ],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "modelUsage": {
+  "claude-haiku-5-5": {
+   "inputTokens": 2,
+   "outputTokens": 2257,
+   "cacheReadInputTokens": 0,
+   "cacheCreationInputTokens": 11218,
+   "webSearchRequests": 0,
+   "costUSD": 0.0033723,
+   "contextWindow": 1000000,
+   "maxOutputTokens": 128000,
+   "thinkingTokens": 1951,
+   "cacheCreationEphemeral5mInputTokens": 0,
+   "cacheCreationEphemeral1hInputTokens": 11218,
+   "canonicalModel": "claude-haiku-5-5",
+   "provider": "firstParty",
+   "costBasis": "list"
+  }
+ },
+ "permission_denials": [],
+ "terminal_reason": "completed",
+ "fast_mode_state": "off",
+ "fast_mode_disabled_reason": "sdk_opt_in_required",
+ "subagent_stats": {
+  "spawned": 0,
+  "requested": {
+   "background": 0,
+   "foreground": 0,
+   "unset": 0
+  },
+  "started_in_background": 0,
+  "max_depth": 0,
+  "spawned_by_subagents": 0,
+  "completed": 0,
+  "failed": 0,
+  "killed": {
+   "parent": 0,
+   "user": 0,
+   "system": 0
+  },
+  "refused": {
+   "depth_limit": 0,
+   "concurrency_limit": 0,
+   "budget": 0
+  },
+  "by_type": {}
+ },
+ "safety_stops": 0,
+ "is_error": false,
+ "num_turns": 1,
+ "subtype": "success",
+ "api_error_status": null,
+ "result": "Added:\n- Dash ability (Space, Shift, or right-click) with brief invulnerability\n- Dash cooldown (about 1.1 s), shown as a ring around the player and a DASH meter in the HUD\n- Dash trail particles and dash/dodge sound effects\n- Lasers from level 4: telegraphed warning, then a deadly sweep across the screen\n- Crossed laser pairs from level 7\n- Shield blocks lasers (\"BLOCKED\")\n- Dodge bonus: +5 points for dashing through hazards or lasers\n- Hazards expire after 16\u201326 s, fading out harmlessly\n- On-screen warning when lasers first appear (level 4)\n- Touch and pen steering via pointer input\n- Canvas scales to fit the viewport height\n- Instructions screen updated to explain dash, lasers, and dodge scoring\n\nRemoved: none\n\nCOUNTS added=13 removed=0",
+ "ttft_ms": 10728,
+ "type": "result",
+ "duration_ms": 11764,
+ "uuid": "710e2b88-a3ed-414b-a6be-77a2f988f129",
+ "ttft_stream_ms": 959,
+ "time_to_request_ms": 198,
+ "first_content_frame_ms": 959,
+ "queued_turn_count": 0,
+ "result_index": 0,
+ "credential_expires_at": "2026-12-12T04:36:10.496Z",
+ "_wall_seconds": 12.640511512756348
+}

@@ -1,0 +1,21 @@
+## Playtest notes
+
+1. **Works:** the game loads with no console errors, the menu shows, and keyboard and mouse both start it. The score goes up, you can lose, and restarting works (8/8 checks passed, about 60 fps). `end.png` shows a fresh run after a restart.
+2. **Works:** the menu is clear. The legend uses the real in-game sprites, and every control is explained both on the canvas and in the help line under it.
+3. **Works:** hazards give fair warning. There are `!` signs at the edges, orange lines before darts, and red dashed lanes before lasers. The red vignette on the last life is a good touch.
+4. **Broken (overlap):** the DASH meter sits in the bottom-left corner of the playfield. In `f05.png` a hazard warning sign is drawn right on top of the "DASH" label, and mines entering there are hidden behind the HUD.
+5. **Broken (overlap):** at high combos, the combo text ("Combo 12 x4 FEVER!") starts at x=232 and runs into the level progress bar under "Level N".
+6. **Feels bad:** orbs are smaller and dimmer than the red mines (`f01` and `f03`). The things you collect are less visible than the things you avoid.
+7. **Feels bad:** an orb could appear almost on top of a mine, because spawns only kept 40 px away from hazards. `f03` shows an orb touching a mine.
+8. **Too hard late on:** the hazard count goes up by 1 every 5 s, up to 24. Add homing hunters, lasers and darts, and late levels get crowded and messy.
+9. **Pacing:** the random bot lost 2 lives by level 3 (about 30 s) and died at 38 s. The early curve is fine for a human, but the end needed a softer cap.
+10. **Idle run:** nothing happened because the bot never started the game. If a game is running and the player stands still, hunters come after them, so idling doesn't work as a strategy.
+
+## Changes in this version
+
+- **HUD:** the DASH meter moved into the top bar, so the playfield corner is free. The combo meter moved to the right of the level indicator, so the HUD elements no longer overlap.
+- **Orbs:** they are bigger (radius 10, or 14 for big orbs) and brighter, with a soft halo, so they stand out more than the hazards.
+- **Orb spawns:** orbs now appear at least 65 px from any mine, and not inside a laser lane that is charging up.
+- **Difficulty:** the hazard limit is now 20 instead of 24, so late levels are hard but not chaotic.
+
+Everything else is unchanged, including all controls, the test hook and restarting. I haven't run the new version through the playtest yet.

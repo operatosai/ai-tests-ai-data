@@ -1,0 +1,56 @@
+Below is a unified diff between two consecutive versions of a small HTML arcade game. Read ONLY the diff. List the player-visible features/mechanics ADDED and REMOVED (plain text, one short line each; ignore refactors). Then answer with a final line exactly: COUNTS added=<int> removed=<int>
+
+--- 
++++ 
+@@ -41,3 +41,6 @@
+   const SHIELD_TIME = 4;      // seconds of shield from a violet orb
+-  const COMBO_WINDOW = 1.5;   // seconds allowed between pickups to keep a combo
++  const COMBO_WINDOW = 2.0;   // seconds allowed between pickups to keep a combo
++  const ORB_TARGET = 6;       // orbs kept on the field
++  const ORB_START = 5;        // orbs spawned at the start of a run
++  const PARTICLE_CAP = 400;   // hard limit on live particles
+   const DASH_SPEED = 480;     // px/s during a dasher lunge (faster than the player)
+@@ -70,2 +73,3 @@
+   let lastKiller = 'bouncer'; // hazard type that ended the last run
++  let nearWinShown = false;   // "almost there" cue shown once per run
+ 
+@@ -153,4 +157,4 @@
+ 
+-    const rad = kind === 'normal' ? 7 : 9;
+-    const life = kind === 'shield' ? 6 : 7;
++    const rad = kind === 'normal' ? 8 : 10;
++    const life = kind === 'shield' ? 7 : 9;
+     orbs.push({ x, y, r: rad, kind, life, age: 0, phase: Math.random() * Math.PI * 2 });
+@@ -264,2 +268,3 @@
+     newBest = false;
++    nearWinShown = false;
+     stats = { orbs: 0, smashed: 0 };
+@@ -270,3 +275,3 @@
+     popups = [];
+-    for (let i = 0; i < 4; i++) spawnOrb();
++    for (let i = 0; i < ORB_START; i++) spawnOrb();
+   }
+@@ -368,3 +373,3 @@
+     if (hazards.length < maxHazards && Math.random() < dt * 1.2) spawnHazard();
+-    if (orbs.length < 5 && Math.random() < dt * 1.8) spawnOrb();
++    if (orbs.length < ORB_TARGET && Math.random() < dt * 2.2) spawnOrb();
+ 
+@@ -452,2 +457,9 @@
+ 
++    // "Almost there" cue, once per run, when the goal is close
++    if (!nearWinShown && score >= WIN_SCORE - 10) {
++      nearWinShown = true;
++      popups.push({ x: W / 2, y: H / 2 - 30, text: 'ALMOST THERE!', life: 1.4, rgb: '255,210,60' });
++      sfx.danger();
++    }
++
+     // Win check
+@@ -466,2 +478,3 @@
+     particles = particles.filter(p => p.life > 0);
++    if (particles.length > PARTICLE_CAP) particles.splice(0, particles.length - PARTICLE_CAP);
+     for (const p of popups) {
+@@ -519,3 +532,3 @@
+       const g = ctx.createRadialGradient(o.x, o.y, 0, o.x, o.y, r * 3);
+-      g.addColorStop(0, `rgba(${col},0.55)`);
++      g.addColorStop(0, `rgba(${col},0.6)`);
+       g.addColorStop(1, `rgba(${col},0)`);

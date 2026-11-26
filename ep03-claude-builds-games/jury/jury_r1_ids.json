@@ -1,0 +1,11 @@
+{
+ "G25": "../jeux/r1_haiku_1",
+ "G50": "../jeux/r1_haiku_2",
+ "G74": "../jeux/r1_haiku_3",
+ "G75": "../jeux/r1_opus_1",
+ "G92": "../jeux/r1_opus_2",
+ "G23": "../jeux/r1_opus_3",
+ "G38": "../jeux/r1_sonnet_1",
+ "G86": "../jeux/r1_sonnet_2",
+ "G89": "../jeux/r1_sonnet_3"
+}

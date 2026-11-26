@@ -1,0 +1,74 @@
+Below is a unified diff between two consecutive versions of a small HTML arcade game. Read ONLY the diff. List the player-visible features/mechanics ADDED and REMOVED (plain text, one short line each; ignore refactors). Then answer with a final line exactly: COUNTS added=<int> removed=<int>
+
+--- 
++++ 
+@@ -46,2 +46,5 @@
+   const DASH_LUNGE = 0.5;     // lunge duration
++  const SAFE_ORB_DIST = 90;   // minimum spawn distance from the player for orbs
++  const SAFE_HAZARD_DIST = 220; // minimum spawn distance from the player for bouncers/dashers
++  const KILLER_NAME = { bouncer: 'a spinner', seeker: 'a chaser', dasher: 'a dasher' };
+ 
+@@ -66,2 +69,3 @@
+   let newBest = false;        // set when the last run beat the saved best
++  let lastKiller = 'bouncer'; // hazard type that ended the last run
+ 
+@@ -134,8 +138,11 @@
+   function spawnOrb() {
+-    let x, y, tries = 0;
+-    do {
++    // Find a safe spot; if none is found this tick, skip the spawn instead of
++    // dropping an orb on top of the player.
++    let x = 0, y = 0, ok = false;
++    for (let tries = 0; tries < 25 && !ok; tries++) {
+       x = randRange(30, W - 30);
+       y = randRange(30, H - 30);
+-      tries++;
+-    } while ((dist(x, y, player.x, player.y) < 90 || nearHazard(x, y)) && tries < 25);
++      ok = dist(x, y, player.x, player.y) >= SAFE_ORB_DIST && !nearHazard(x, y);
++    }
++    if (!ok) return;
+ 
+@@ -158,3 +165,3 @@
+       : 'bouncer';
+-    let x, y, tries = 0;
++    let x = 0, y = 0;
+     if (type === 'seeker') {
+@@ -167,7 +174,11 @@
+     } else {
+-      do {
++      // Bouncers and dashers must spawn well away from the player; if no safe
++      // spot is found this tick, skip the spawn rather than place it on the player.
++      let ok = false;
++      for (let tries = 0; tries < 30 && !ok; tries++) {
+         x = randRange(20, W - 20);
+         y = randRange(20, H - 20);
+-        tries++;
+-      } while (dist(x, y, player.x, player.y) < 220 && tries < 30);
++        ok = dist(x, y, player.x, player.y) >= SAFE_HAZARD_DIST;
++      }
++      if (!ok) return;
+     }
+@@ -269,5 +280,6 @@
+ 
+-  function die() {
++  function die(cause) {
+     state = 'over';
+     paused = false;
++    lastKiller = cause || 'bouncer';
+     newBest = score > best && score > 0;
+@@ -425,3 +437,3 @@
+         } else if (grace <= 0) {
+-          die();
++          die(h.type);
+           return;
+@@ -738,3 +750,4 @@
+     text(`Orbs collected: ${stats.orbs}   Hazards smashed: ${stats.smashed}`, W / 2, 345, 16, '#8ff');
+-    if (newBest) glowText('NEW BEST!', W / 2, 380, 24, '#ffd23f');
++    text(`Caught by ${KILLER_NAME[lastKiller] || 'a hazard'}`, W / 2, 372, 16, '#ff9ab8');
++    if (newBest) glowText('NEW BEST!', W / 2, 404, 24, '#ffd23f');
+     if (cooldown <= 0) {
+@@ -742,3 +755,3 @@
+       ctx.globalAlpha = pulseAlpha();
+-      text('Press ENTER / SPACE or CLICK to try again', W / 2, 425, 20, '#ffffff');
++      text('Press ENTER / SPACE or CLICK to try again', W / 2, 440, 20, '#ffffff');
+       ctx.restore();

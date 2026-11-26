@@ -1,0 +1,294 @@
+Below is a unified diff between two consecutive versions of a small HTML arcade game. Read ONLY the diff. List the player-visible features/mechanics ADDED and REMOVED (plain text, one short line each; ignore refactors). Then answer with a final line exactly: COUNTS added=<int> removed=<int>
+
+--- 
++++ 
+@@ -16,7 +16,9 @@
+   const W = cv.width, H = cv.height;
+-  const WIN_SCORE = 40;
++  const WIN_SCORE = 40, ORB_LIFE = 7, MAX_HAZ = 14;
+   window.gameState = { score: 0, state: "menu" };
+ 
+-  let state = "menu", score = 0, lives = 3, time = 0, last = 0;
+-  let player, orbs, hazards, particles, spawnT, invuln, keys = {}, mouse = null, shake = 0;
++  let state = "menu", score = 0, lives = 3, time = 0, last = 0, paused = false;
++  let player, orbs, hazards, pending, particles, spawnT, invuln, keys = {}, mouse = null, shake = 0;
++  let combo = 0, comboT = 0, dash = 0, dashCd = 0, best = 0, newBest = false;
++  try { best = parseInt(localStorage.getItem('orbrunner_best')) || 0; } catch (e) {}
+ 
+@@ -30,3 +32,3 @@
+       o.type = type; o.frequency.value = freq;
+-      if (slide) o.frequency.linearRampToValueAtTime(freq + slide, actx.currentTime + dur);
++      if (slide) o.frequency.linearRampToValueAtTime(Math.max(20, freq + slide), actx.currentTime + dur);
+       g.gain.setValueAtTime(vol, actx.currentTime);
+@@ -42,6 +44,7 @@
+     player = { x: W / 2, y: H / 2, r: 14, speed: 300 };
+-    orbs = []; hazards = []; particles = [];
++    orbs = []; hazards = []; pending = []; particles = [];
+     score = 0; lives = 3; time = 0; spawnT = 0; invuln = 0; shake = 0;
++    combo = 0; comboT = 0; dash = 0; dashCd = 0; paused = false; newBest = false;
+     for (let i = 0; i < 3; i++) spawnOrb();
+-    for (let i = 0; i < 3; i++) spawnHazard();
++    for (let i = 0; i < 3; i++) queueHazard(0.3 + i * 0.4);
+   }
+@@ -51,2 +54,8 @@
+     beep(440, 0.15, 'square', 0.08, 220);
++  }
++
++  function endGame(s) {
++    state = s;
++    if (score > best) { best = score; newBest = true; try { localStorage.setItem('orbrunner_best', best); } catch (e) {} }
++    sync();
+   }
+@@ -58,16 +67,23 @@
+     } while (tries < 20 && Math.hypot(x - player.x, y - player.y) < 80);
+-    orbs.push({ x, y, r: 10, ph: Math.random() * 6 });
+-  }
+-
+-  function spawnHazard() {
++    orbs.push({ x, y, r: 10, ph: Math.random() * 6, life: ORB_LIFE });
++  }
++
++  function queueHazard(delay = 0.9) {
++    if (hazards.length + pending.length >= MAX_HAZ) return;
++    const side = Math.floor(Math.random() * 4);
++    let x, y;
++    if (side === 0) { x = 14; y = 50 + Math.random() * (H - 70); }
++    else if (side === 1) { x = W - 14; y = 50 + Math.random() * (H - 70); }
++    else if (side === 2) { x = 14 + Math.random() * (W - 28); y = 50; }
++    else { x = 14 + Math.random() * (W - 28); y = H - 14; }
++    const chaser = time > 40 ? Math.random() < 0.35 : (time > 20 && Math.random() < 0.25);
++    pending.push({ x, y, t: delay, chaser });
++  }
++
++  function spawnHazard(p) {
+     const diff = 1 + time / 20;
+-    const sp = (70 + Math.random() * 50) * Math.min(diff, 3.5);
+-    let x, y;
+-    const side = Math.floor(Math.random() * 4);
+-    if (side === 0) { x = -20; y = Math.random() * H; }
+-    else if (side === 1) { x = W + 20; y = Math.random() * H; }
+-    else if (side === 2) { x = Math.random() * W; y = -20; }
+-    else { x = Math.random() * W; y = H + 20; }
+-    const a = Math.atan2(player.y - y, player.x - x) + (Math.random() - 0.5) * 1.2;
+-    hazards.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, r: 12 + Math.random() * 8, rot: 0 });
++    const sp = (70 + Math.random() * 50) * Math.min(diff, 3.2) * (p.chaser ? 0.7 : 1);
++    const a = Math.atan2(player.y - p.y, player.x - p.x) + (Math.random() - 0.5) * (p.chaser ? 0.3 : 1.2);
++    hazards.push({ x: p.x, y: p.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, sp, chaser: p.chaser,
++      r: 12 + Math.random() * 8, rot: 0 });
+   }
+@@ -82,9 +98,17 @@
+   // ---------- input ----------
++  function togglePause() { if (state === "playing") paused = !paused; }
+   addEventListener('keydown', e => {
+-    keys[e.key.toLowerCase()] = true;
+-    if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(e.key.toLowerCase())) e.preventDefault();
++    const k = e.key.toLowerCase();
++    keys[k] = true;
++    if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(k)) e.preventDefault();
+     if (state !== "playing" && (e.key === ' ' || e.key === 'Enter')) start();
+-    mouse = null;
++    else if (state === "playing" && (k === 'p' || k === 'escape')) togglePause();
++    else if (state === "playing" && paused && (k === ' ' || k === 'enter')) paused = false;
++    if (k === 'shift' && state === "playing" && !paused && dashCd <= 0) {
++      dash = 0.2; dashCd = 2; beep(300, 0.15, 'triangle', 0.08, 400);
++    }
++    if (k !== 'shift') mouse = null;
+   });
+   addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
++  addEventListener('blur', () => { if (state === "playing") paused = true; keys = {}; });
+   function mpos(e) {
+@@ -96,2 +120,3 @@
+     if (state !== "playing") start();
++    else if (paused) paused = false;
+     mouse = mpos(e);
+@@ -102,2 +127,3 @@
+     if (state !== "playing") { updateParticles(dt); return; }
++    if (paused) return;
+     time += dt;
+@@ -105,3 +131,7 @@
+     shake = Math.max(0, shake - dt * 30);
+-
++    dash = Math.max(0, dash - dt);
++    dashCd = Math.max(0, dashCd - dt);
++    if (comboT > 0) { comboT -= dt; if (comboT <= 0) combo = 0; }
++
++    const spd = player.speed * (dash > 0 ? 2.2 : 1);
+     let dx = 0, dy = 0;
+@@ -113,6 +143,6 @@
+       const l = Math.hypot(dx, dy);
+-      player.x += dx / l * player.speed * dt; player.y += dy / l * player.speed * dt;
++      player.x += dx / l * spd * dt; player.y += dy / l * spd * dt;
+     } else if (mouse) {
+       const ddx = mouse.x - player.x, ddy = mouse.y - player.y, d = Math.hypot(ddx, ddy);
+-      const step = Math.min(d, player.speed * 1.5 * dt);
++      const step = Math.min(d, spd * 1.5 * dt);
+       if (d > 1) { player.x += ddx / d * step; player.y += ddy / d * step; }
+@@ -125,16 +155,25 @@
+     const interval = Math.max(0.7, 3.5 - time * 0.04);
+-    if (spawnT > interval) { spawnT = 0; spawnHazard(); }
+-
+-    for (const o of orbs) o.ph += dt * 4;
++    if (spawnT > interval) { spawnT = 0; queueHazard(); }
++    for (let i = pending.length - 1; i >= 0; i--) {
++      pending[i].t -= dt;
++      if (pending[i].t <= 0) { spawnHazard(pending[i]); pending.splice(i, 1); }
++    }
++
+     for (let i = orbs.length - 1; i >= 0; i--) {
+       const o = orbs[i];
++      o.ph += dt * 4; o.life -= dt;
++      if (o.life <= 0) {
++        orbs.splice(i, 1); burst(o.x, o.y, '#388', 8); combo = 0; spawnOrb();
++        continue;
++      }
+       if (Math.hypot(o.x - player.x, o.y - player.y) < o.r + player.r) {
+         orbs.splice(i, 1); score++;
++        combo++; comboT = 2.5;
+         burst(o.x, o.y, '#6ff', 14);
+-        beep(660 + Math.min(score, 20) * 20, 0.12, 'sine', 0.12, 300);
++        beep(660 + Math.min(score, 20) * 20 + Math.min(combo, 8) * 30, 0.12, 'sine', 0.12, 300);
++        if (combo > 0 && combo % 5 === 0 && lives < 5) { lives++; beep(990, 0.3, 'triangle', 0.12, 300); }
+         spawnOrb();
+-        if (score % 5 === 0) spawnOrb();
+-        if (orbs.length > 5) orbs.pop();
+-        if (score >= WIN_SCORE) { state = "won"; beep(880, 0.5, 'triangle', 0.15, 400); }
+-        sync();
++        if (score % 5 === 0 && orbs.length < 5) spawnOrb();
++        if (score >= WIN_SCORE) { endGame("won"); beep(880, 0.5, 'triangle', 0.15, 400); }
++        else sync();
+       }
+@@ -144,4 +183,9 @@
+       const h = hazards[i];
++      if (h.chaser) {
++        const want = Math.atan2(player.y - h.y, player.x - h.x), cur = Math.atan2(h.vy, h.vx);
++        let da = want - cur; while (da > Math.PI) da -= 6.283; while (da < -Math.PI) da += 6.283;
++        const na = cur + Math.max(-1.1 * dt, Math.min(1.1 * dt, da));
++        h.vx = Math.cos(na) * h.sp; h.vy = Math.sin(na) * h.sp;
++      }
+       h.x += h.vx * dt; h.y += h.vy * dt; h.rot += dt * 3;
+-      // bounce off walls
+       if (h.x < h.r && h.vx < 0 || h.x > W - h.r && h.vx > 0) h.vx *= -1;
+@@ -149,6 +193,6 @@
+       if (invuln <= 0 && Math.hypot(h.x - player.x, h.y - player.y) < h.r * 0.85 + player.r * 0.8) {
+-        lives--; invuln = 1.5; shake = 10;
++        lives--; invuln = 1.5; shake = 10; combo = 0;
+         burst(player.x, player.y, '#f55', 25);
+         beep(120, 0.4, 'sawtooth', 0.15, -80);
+-        if (lives <= 0) { state = "over"; sync(); }
++        if (lives <= 0) { endGame("over"); break; }
+       }
+@@ -170,3 +214,3 @@
+     ctx.fillStyle = color;
+-    ctx.beginPath(); ctx.arc(x, y, r, 0, 6.283); ctx.fill();
++    ctx.beginPath(); ctx.arc(x, y, Math.max(0.5, r), 0, 6.283); ctx.fill();
+     ctx.shadowBlur = 0;
+@@ -180,2 +224,12 @@
+ 
++  function spike(r, fill, glow) {
++    ctx.shadowColor = glow; ctx.shadowBlur = 15; ctx.fillStyle = fill;
++    ctx.beginPath();
++    for (let i = 0; i < 16; i++) {
++      const rr = i % 2 ? r * 0.6 : r * 1.15, a = i / 16 * 6.283;
++      ctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr);
++    }
++    ctx.closePath(); ctx.fill();
++  }
++
+   function draw() {
+@@ -186,14 +240,24 @@
+     if (state !== "menu") {
+-      for (const o of orbs) glowCircle(o.x, o.y, o.r + Math.sin(o.ph) * 2, '#5ff', 25);
++      for (const p of pending) {
++        const f = 0.5 + 0.5 * Math.sin(p.t * 25);
++        ctx.globalAlpha = 0.4 + 0.6 * f;
++        ctx.strokeStyle = p.chaser ? '#c6f' : '#f55'; ctx.lineWidth = 3;
++        ctx.beginPath(); ctx.arc(p.x, p.y, 10 + p.t * 14, 0, 6.283); ctx.stroke();
++        text('!', p.x, p.y + 6, 16, p.chaser ? '#c6f' : '#f55');
++      }
++      ctx.globalAlpha = 1;
++      for (const o of orbs) {
++        ctx.globalAlpha = o.life < 2 ? (Math.floor(o.life * 8) % 2 ? 0.35 : 1) : 1;
++        glowCircle(o.x, o.y, o.r + Math.sin(o.ph) * 2, '#5ff', 25);
++      }
++      ctx.globalAlpha = 1;
+       for (const h of hazards) {
+         ctx.save(); ctx.translate(h.x, h.y); ctx.rotate(h.rot);
+-        ctx.shadowColor = '#f33'; ctx.shadowBlur = 15; ctx.fillStyle = '#e22';
+-        ctx.beginPath();
+-        for (let i = 0; i < 16; i++) {
+-          const rr = i % 2 ? h.r * 0.6 : h.r * 1.15, a = i / 16 * 6.283;
+-          ctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr);
+-        }
+-        ctx.closePath(); ctx.fill(); ctx.restore();
+-      }
+-      if (state !== "over" && !(invuln > 0 && Math.floor(invuln * 12) % 2)) glowCircle(player.x, player.y, player.r, '#ffd84a', 22);
++        if (h.chaser) spike(h.r, '#a3e', '#c6f'); else spike(h.r, '#e22', '#f33');
++        ctx.restore();
++      }
++      ctx.shadowBlur = 0;
++      if (state !== "over" && !(invuln > 0 && Math.floor(invuln * 12) % 2)) {
++        glowCircle(player.x, player.y, player.r, dash > 0 ? '#fff' : '#ffd84a', 22);
++      }
+       for (const p of particles) {
+@@ -205,2 +269,3 @@
+       text('SCORE ' + score + ' / ' + WIN_SCORE, 16, 30, 22, '#fff', 'left');
++      text('BEST ' + best, 16, 52, 14, '#889', 'left');
+       text('LIVES ' + '♥'.repeat(Math.max(0, lives)), W - 16, 30, 22, '#f66', 'right');
+@@ -208,2 +273,7 @@
+       text('LEVEL ' + lvl, W / 2, 30, 18, '#9af');
++      if (combo > 1) text('COMBO x' + combo + (combo % 5 ? '' : ' +♥'), W / 2, 54, 16, '#ffd84a');
++      // dash bar
++      ctx.fillStyle = '#223'; ctx.fillRect(W - 116, 42, 100, 6);
++      ctx.fillStyle = dashCd > 0 ? '#58a' : '#5ff'; ctx.fillRect(W - 116, 42, 100 * (1 - dashCd / 2), 6);
++      text('SHIFT dash', W - 16, 66, 12, '#889', 'right');
+     }
+@@ -211,22 +281,26 @@
+     if (state === "menu") {
+-      text('ORB RUNNER', W / 2, 190, 64, '#5ff');
+-      glowCircle(W / 2 - 150, 240, 8, '#5ff', 20);
+-      text('Collect glowing orbs', W / 2 + 10, 246, 20, '#cfe');
+-      ctx.save(); ctx.translate(W / 2 - 150, 280); ctx.fillStyle = '#e22'; ctx.shadowColor = '#f33'; ctx.shadowBlur = 12;
+-      ctx.beginPath(); for (let i = 0; i < 16; i++) { const rr = i % 2 ? 6 : 12; const a = i / 16 * 6.283; ctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr); }
+-      ctx.closePath(); ctx.fill(); ctx.restore();
+-      text('Avoid the red spikes', W / 2 + 10, 286, 20, '#fcc');
+-      text('Move: WASD / Arrow keys, or the mouse', W / 2, 345, 20, '#fff');
+-      text('Reach ' + WIN_SCORE + ' orbs to win. You have 3 lives.', W / 2, 375, 18, '#9af');
+-      text('Click or press SPACE to start', W / 2, 450, 26, '#ffd84a');
+-    } else if (state === "over") {
++      text('ORB RUNNER', W / 2, 170, 64, '#5ff');
++      glowCircle(W / 2 - 170, 220, 8, '#5ff', 20);
++      text('Collect glowing orbs (they fade, be quick)', W / 2 + 10, 226, 18, '#cfe');
++      ctx.save(); ctx.translate(W / 2 - 170, 260); ctx.rotate(0.3); spike(10, '#e22', '#f33'); ctx.restore();
++      text('Avoid the red spikes', W / 2 + 10, 266, 18, '#fcc');
++      ctx.save(); ctx.translate(W / 2 - 170, 300); ctx.rotate(0.3); spike(10, '#a3e', '#c6f'); ctx.restore();
++      text('Purple spikes hunt you later on', W / 2 + 10, 306, 18, '#e9f');
++      text('Move: WASD / Arrows, or the mouse', W / 2, 355, 20, '#fff');
++      text('SHIFT = dash   P / Esc = pause', W / 2, 382, 18, '#fff');
++      text('Reach ' + WIN_SCORE + ' orbs to win. 5 orbs in a combo = +1 life.', W / 2, 410, 16, '#9af');
++      if (best) text('Best: ' + best, W / 2, 436, 16, '#889');
++      text('Click or press SPACE to start', W / 2, 490, 26, '#ffd84a');
++    } else if (paused && state === "playing") {
++      ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(0, 0, W, H);
++      text('PAUSED', W / 2, 280, 56, '#9af');
++      text('Press P, SPACE or click to resume', W / 2, 335, 20, '#fff');
++    } else if (state === "over" || state === "won") {
+       ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(0, 0, W, H);
+-      text('GAME OVER', W / 2, 260, 60, '#f55');
+-      text('Score: ' + score, W / 2, 315, 28, '#fff');
+-      text('Click or press SPACE to play again', W / 2, 390, 22, '#ffd84a');
+-    } else if (state === "won") {
+-      ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(0, 0, W, H);
+-      text('YOU WIN!', W / 2, 260, 60, '#5f8');
+-      text('Score: ' + score, W / 2, 315, 28, '#fff');
+-      text('Click or press SPACE to play again', W / 2, 390, 22, '#ffd84a');
++      if (state === "over") text('GAME OVER', W / 2, 250, 60, '#f55');
++      else text('YOU WIN!', W / 2, 250, 60, '#5f8');
++      text('Score: ' + score + ' / ' + WIN_SCORE, W / 2, 305, 28, '#fff');
++      text(newBest ? 'NEW BEST!' : 'Best: ' + best, W / 2, 342, 20, newBest ? '#ffd84a' : '#889');
++      text('Survived ' + Math.floor(time) + 's', W / 2, 370, 18, '#9af');
++      text('Click or press SPACE to play again', W / 2, 430, 22, '#ffd84a');
+     }
+@@ -240,2 +314,3 @@
+     draw();
++    sync();
+     requestAnimationFrame(loop);

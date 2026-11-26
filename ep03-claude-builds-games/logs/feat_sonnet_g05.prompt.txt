@@ -1,0 +1,88 @@
+Below is a unified diff between two consecutive versions of a small HTML arcade game. Read ONLY the diff. List the player-visible features/mechanics ADDED and REMOVED (plain text, one short line each; ignore refactors). Then answer with a final line exactly: COUNTS added=<int> removed=<int>
+
+--- 
++++ 
+@@ -7,3 +7,3 @@
+   html,body{margin:0;height:100%;background:#05050f;display:flex;align-items:center;justify-content:center;overflow:hidden}
+-  canvas{background:radial-gradient(circle at 50% 40%,#10103a,#05050f);border:2px solid #2a2a6a;box-shadow:0 0 30px #2a2aff55;max-width:100vw;max-height:100vh}
++  canvas{background:radial-gradient(circle at 50% 40%,#10103a,#05050f);border:2px solid #2a2a6a;box-shadow:0 0 30px #2a2aff55;max-width:100vw;max-height:100vh;touch-action:none}
+ </style>
+@@ -19,3 +19,3 @@
+ 
+-  let state = "menu", score = 0, lives = 3, time = 0, last = 0, paused = false;
++  let state = "menu", score = 0, lives = 3, time = 0, last = 0, paused = false, muted = false;
+   let player, orbs, hazards, pending, particles, floats, spawnT, invuln, keys = {}, mouse = null, shake = 0;
+@@ -29,2 +29,3 @@
+   function beep(freq, dur, type = 'sine', vol = 0.12, slide = 0) {
++    if (muted) return;
+     try {
+@@ -69,3 +70,3 @@
+     } while (tries < 20 && Math.hypot(x - player.x, y - player.y) < 80);
+-    const life = gold ? 4.5 : ORB_LIFE;
++    const life = gold ? 4.5 : ORB_LIFE + (time < 20 ? 4 : 0);
+     orbs.push({ x, y, r: gold ? 12 : 10, ph: Math.random() * 6, life, max: life, gold: !!gold });
+@@ -78,5 +79,5 @@
+       const side = Math.floor(Math.random() * 4);
+-      if (side === 0) { x = 14; y = TOP + Math.random() * (H - TOP - 20); }
+-      else if (side === 1) { x = W - 14; y = TOP + Math.random() * (H - TOP - 20); }
+-      else if (side === 2) { x = 14 + Math.random() * (W - 28); y = TOP; }
++      if (side === 0) { x = 14; y = TOP + 20 + Math.random() * (H - TOP - 40); }
++      else if (side === 1) { x = W - 14; y = TOP + 20 + Math.random() * (H - TOP - 40); }
++      else if (side === 2) { x = 14 + Math.random() * (W - 28); y = TOP + 20; }
+       else { x = 14 + Math.random() * (W - 28); y = H - 14; }
+@@ -106,2 +107,7 @@
+   function togglePause() { if (state === "playing") paused = !paused; }
++  function doDash() {
++    if (state === "playing" && !paused && dashCd <= 0) {
++      dash = 0.25; dashCd = 2; beep(300, 0.15, 'triangle', 0.08, 400);
++    }
++  }
+   addEventListener('keydown', e => {
+@@ -110,2 +116,3 @@
+     if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(k)) e.preventDefault();
++    if (k === 'm') { muted = !muted; return; }
+     if (state !== "playing" && (e.key === ' ' || e.key === 'Enter')) start();
+@@ -113,5 +120,3 @@
+     else if (state === "playing" && paused && (k === ' ' || k === 'enter')) paused = false;
+-    if (k === 'shift' && state === "playing" && !paused && dashCd <= 0) {
+-      dash = 0.25; dashCd = 2; beep(300, 0.15, 'triangle', 0.08, 400);
+-    }
++    if (k === 'shift') doDash();
+     if (k !== 'shift') mouse = null;
+@@ -128,5 +133,13 @@
+     else if (paused) paused = false;
+-    else if (dashCd <= 0 && e.button === 2) { dash = 0.25; dashCd = 2; beep(300, 0.15, 'triangle', 0.08, 400); }
++    else if (e.button === 2) doDash();
+     mouse = mpos(e);
+   });
++  cv.addEventListener('touchstart', e => {
++    e.preventDefault();
++    const t = e.touches[0];
++    if (state !== "playing") start();
++    else if (paused) paused = false;
++    mouse = mpos(t);
++  }, { passive: false });
++  cv.addEventListener('touchmove', e => { e.preventDefault(); mouse = mpos(e.touches[0]); }, { passive: false });
+   cv.addEventListener('contextmenu', e => e.preventDefault());
+@@ -174,2 +187,3 @@
+     player.y = Math.max(player.r, Math.min(H - player.r, player.y));
++    if (dash > 0) particles.push({ x: player.x, y: player.y, vx: (Math.random() - 0.5) * 30, vy: (Math.random() - 0.5) * 30, life: 0.3, max: 0.3, color: '#9ff' });
+ 
+@@ -222,3 +236,3 @@
+       if (h.x < h.r && h.vx < 0 || h.x > W - h.r && h.vx > 0) h.vx *= -1;
+-      if (h.y < TOP - 30 + h.r && h.vy < 0 || h.y > H - h.r && h.vy > 0) h.vy *= -1;
++      if (h.y < TOP + h.r && h.vy < 0 || h.y > H - h.r && h.vy > 0) h.vy *= -1;
+       if (invuln <= 0 && dash <= 0 && Math.hypot(h.x - player.x, h.y - player.y) < h.r * 0.85 + player.r * 0.8) {
+@@ -329,3 +343,3 @@
+       ctx.fillStyle = dashCd > 0 ? '#58a' : '#5ff'; ctx.fillRect(W - 116, 42, 100 * (1 - dashCd / 2), 6);
+-      text('SHIFT dash (safe)', W - 16, 66, 12, '#889', 'right');
++      text('SHIFT dash (safe)' + (muted ? '  [muted]' : ''), W - 16, 66, 12, '#889', 'right');
+     }
+@@ -345,5 +359,5 @@
+       text('Golden orbs = 3 points (no penalty if missed)', tx, 348, 18, '#fe9', 'left');
+-      text('Move: WASD / Arrows, or the mouse', W / 2, 390, 20, '#fff');
++      text('Move: WASD / Arrows, or the mouse / touch', W / 2, 390, 20, '#fff');
+       text('SHIFT (or right-click) = dash, safe from spikes', W / 2, 416, 18, '#fff');
+-      text('P / Esc = pause', W / 2, 440, 18, '#fff');
++      text('P / Esc = pause     M = mute', W / 2, 440, 18, '#fff');
+       text('Reach ' + WIN_SCORE + ' points to win. 5 orbs in a combo = +1 life.', W / 2, 468, 16, '#9af');

@@ -1,0 +1,239 @@
+Below is a unified diff between two consecutive versions of a small HTML arcade game. Read ONLY the diff. List the player-visible features/mechanics ADDED and REMOVED (plain text, one short line each; ignore refactors). Then answer with a final line exactly: COUNTS added=<int> removed=<int>
+
+--- 
++++ 
+@@ -15,3 +15,3 @@
+   <canvas id="c" width="800" height="560"></canvas>
+-  <div id="help">Move: Arrow keys / WASD, or hold the mouse button to steer &middot; Dash: Space / Shift / right-click &middot; P / Esc: pause &middot; M: mute</div>
++  <div id="help">Move: Arrow keys / WASD / ZQSD, or hold the mouse button to steer &middot; Dash: Space / Shift / right-click &middot; P / Esc: pause &middot; M: mute</div>
+ </div>
+@@ -24,4 +24,5 @@
+   const DASH_TIME = 0.16, DASH_CD = 1.1, DASH_SPEED = 920;
+-  const HUD_H = 72;
++  const TOP = 58;          // top of the playfield (HUD above)
+   const GRAZE = 20;
++  const MAGNET = 70;
+ 
+@@ -66,3 +67,4 @@
+     start(){ tone(330,0.1,'square',0.1,660); },
+-    level(){ tone(880,0.15,'triangle',0.1,1320); }
++    level(){ tone(880,0.15,'triangle',0.1,1320); },
++    shower(){ [700,880,1050,1320].forEach((f,i)=>setTimeout(()=>tone(f,0.1,'sine',0.08,f*1.3),i*50)); }
+   };
+@@ -125,3 +127,3 @@
+   function reset(){
+-    player = { x: W/2, y: H/2, r: 12, speed: 285 };
++    player = { x: W/2, y: (H + TOP)/2, r: 12, speed: 285 };
+     orbs = []; hazards = []; pending = []; particles = []; popups = []; trail = []; power = null; lasers = [];
+@@ -184,4 +186,4 @@
+       const big = Math.random() < 0.12;
+-      o = { x: rand(30, W-30), y: rand(HUD_H + 14, H-30), r: big ? 12 : 8, t: Math.random()*6, hue: rand(170, 300), big,
+-            life: big ? 5 : rand(7, 10), born: 0 };
++      o = { x: rand(30, W-30), y: rand(TOP + 20, H-30), r: big ? 12 : 8, t: Math.random()*6, hue: rand(170, 300), big,
++            life: big ? 5 : rand(7, 10), born: 0, bonus: false };
+       tries++;
+@@ -191,2 +193,12 @@
+   }
++  function orbShower(){
++    const cx = rand(220, W-220), cy = rand(TOP + 150, H - 150), R = 105, a0 = Math.random()*Math.PI;
++    for (let i = 0; i < 6; i++) {
++      const a = a0 + i * Math.PI / 3;
++      orbs.push({ x: cx + Math.cos(a)*R, y: cy + Math.sin(a)*R, r: 8, t: Math.random()*6, hue: 45 + i*8, big: false,
++                  life: 4.5, max: 4.5, born: -i*0.06, bonus: true });
++    }
++    burst(cx, cy, 50, 24, 200);
++    sfx.shower();
++  }
+   function queueHazard(){
+@@ -195,6 +207,6 @@
+       const side = Math.floor(Math.random()*4);
+-      if (side === 0) { x = rand(20,W-20); y = -20; }
+-      else if (side === 1) { x = W+20; y = rand(HUD_H,H-20); }
++      if (side === 0) { x = rand(20,W-20); y = TOP - 20; }
++      else if (side === 1) { x = W+20; y = rand(TOP+20,H-20); }
+       else if (side === 2) { x = rand(20,W-20); y = H+20; }
+-      else { x = -20; y = rand(HUD_H,H-20); }
++      else { x = -20; y = rand(TOP+20,H-20); }
+       tries++;
+@@ -206,3 +218,3 @@
+     const speed = rand(90, 130) + level * 14;
+-    const tx = rand(W*0.2, W*0.8), ty = rand(H*0.2, H*0.8);
++    const tx = rand(W*0.2, W*0.8), ty = rand(TOP + (H-TOP)*0.2, TOP + (H-TOP)*0.8);
+     const a = Math.atan2(ty - y, tx - x);
+@@ -213,3 +225,3 @@
+     const horiz = Math.random() < 0.5;
+-    const pos = horiz ? clamp(player.y + rand(-110, 110) + (offsetBias||0), 60, H-20)
++    const pos = horiz ? clamp(player.y + rand(-110, 110) + (offsetBias||0), TOP + 14, H-20)
+                       : clamp(player.x + rand(-150, 150) + (offsetBias||0), 20, W-20);
+@@ -225,3 +237,3 @@
+   function popup(x, y, txt, color, size){
+-    popups.push({ x: clamp(x, 60, W-60), y: Math.max(y, HUD_H + 14), txt, color: color || '#fff', size: size || 16, life: 0.9, max: 0.9 });
++    popups.push({ x: clamp(x, 60, W-60), y: Math.max(y, TOP + 18), txt, color: color || '#fff', size: size || 16, life: 0.9, max: 0.9 });
+   }
+@@ -281,4 +293,6 @@
+     if (newLevel > level) {
+-      level = newLevel; levelBanner = 1.6; sfx.level(); burst(W/2, 30, 50, 20, 200);
+-      if (level === 4) popup(W/2, H/2 - 70, 'Lasers incoming! Dash through them.', '#f88', 20);
++      level = newLevel; levelBanner = 1.6; sfx.level(); burst(W/2, TOP + 10, 50, 20, 200);
++      orbShower();
++      popup(W/2, H/2 - 60, 'ORB SHOWER! Grab them fast', '#ffe36b', 18);
++      if (level === 4) popup(W/2, H/2 - 30, 'Lasers incoming! Dash through them.', '#f88', 20);
+     }
+@@ -298,3 +312,3 @@
+     player.x = clamp(player.x, player.r, W - player.r);
+-    player.y = clamp(player.y, player.r, H - player.r);
++    player.y = clamp(player.y, TOP + player.r, H - player.r);
+     trail.push({ x: player.x, y: player.y });
+@@ -311,3 +325,9 @@
+       o.t += dt*3; o.life -= dt; o.born += dt;
+-      if (dist(o, player) < o.r + player.r + 2) {
++      let od = dist(o, player);
++      if (od < MAGNET && od > 0.01 && o.born > 0.15) {
++        const pull = 160 * (1 - od / MAGNET) * dt;
++        o.x += (player.x - o.x) / od * pull; o.y += (player.y - o.y) / od * pull;
++        od = dist(o, player);
++      }
++      if (od < o.r + player.r + 2 && o.born > 0) {
+         combo++; comboTimer = 2;
+@@ -319,3 +339,3 @@
+         orbs.splice(i,1);
+-        spawnOrb();
++        if (!o.bonus) spawnOrb();
+         if (addScore(pts)) return;
+@@ -324,3 +344,3 @@
+         orbs.splice(i,1);
+-        spawnOrb();
++        if (!o.bonus) spawnOrb();
+       }
+@@ -331,3 +351,3 @@
+     if (!power && powerTimer <= 0) {
+-      power = { x: rand(60, W-60), y: rand(HUD_H + 30, H-60), life: 7, t: 0 };
++      power = { x: rand(60, W-60), y: rand(TOP + 40, H-60), life: 7, t: 0 };
+       powerTimer = rand(16, 24);
+@@ -350,3 +370,3 @@
+         if (level >= 7 && Math.random() < 0.4) {
+-          const l2 = { horiz: !h, pos: !h ? clamp(player.y + rand(-80,80), 60, H-20) : clamp(player.x + rand(-100,100), 20, W-20), warn: 1.1, on: 0.35, w: 20, done: false };
++          const l2 = { horiz: !h, pos: !h ? clamp(player.y + rand(-80,80), TOP + 14, H-20) : clamp(player.x + rand(-100,100), 20, W-20), warn: 1.1, on: 0.35, w: 20, done: false };
+           lasers.push(l2);
+@@ -399,3 +419,3 @@
+       if (h.entering) {
+-        if (h.x > h.r && h.x < W-h.r && h.y > h.r && h.y < H-h.r) h.entering = false;
++        if (h.x > h.r && h.x < W-h.r && h.y > TOP + h.r && h.y < H-h.r) h.entering = false;
+       } else {
+@@ -403,3 +423,3 @@
+         if (h.x > W-h.r) { h.x = W-h.r; h.vx = -Math.abs(h.vx); }
+-        if (h.y < h.r) { h.y = h.r; h.vy = Math.abs(h.vy); }
++        if (h.y < TOP + h.r) { h.y = TOP + h.r; h.vy = Math.abs(h.vy); }
+         if (h.y > H-h.r) { h.y = H-h.r; h.vy = -Math.abs(h.vy); }
+@@ -428,3 +448,2 @@
+       } else if (hd < hitR + GRAZE) {
+-        // near miss: risk/reward
+         if (!h.grazed && !safe && shield <= 0) {
+@@ -479,3 +498,3 @@
+   function drawWarning(p, t){
+-    const x = clamp(p.x, 18, W-18), y = clamp(p.y, HUD_H + 4, H-18);
++    const x = clamp(p.x, 18, W-18), y = clamp(p.y, TOP + 16, H-18);
+     const pulse = 0.5 + 0.5*Math.sin(t*25);
+@@ -494,2 +513,3 @@
+     ctx.save();
++    const FH = H - TOP;
+     if (l.warn > 0) {
+@@ -498,3 +518,3 @@
+       ctx.fillStyle = `rgba(255,60,60,${0.05 + 0.1*k})`;
+-      if (l.horiz) ctx.fillRect(0, l.pos - l.w/2, W, l.w); else ctx.fillRect(l.pos - l.w/2, 0, l.w, H);
++      if (l.horiz) ctx.fillRect(0, l.pos - l.w/2, W, l.w); else ctx.fillRect(l.pos - l.w/2, TOP, l.w, FH);
+       ctx.strokeStyle = `rgba(255,80,80,${0.35 + 0.5*pulse})`;
+@@ -502,3 +522,3 @@
+       ctx.beginPath();
+-      if (l.horiz) { ctx.moveTo(0, l.pos); ctx.lineTo(W, l.pos); } else { ctx.moveTo(l.pos, 0); ctx.lineTo(l.pos, H); }
++      if (l.horiz) { ctx.moveTo(0, l.pos); ctx.lineTo(W, l.pos); } else { ctx.moveTo(l.pos, TOP); ctx.lineTo(l.pos, H); }
+       ctx.stroke();
+@@ -510,5 +530,5 @@
+       const w = l.w * (0.8 + 0.2*Math.sin(t*60));
+-      if (l.horiz) ctx.fillRect(0, l.pos - w/2, W, w); else ctx.fillRect(l.pos - w/2, 0, w, H);
++      if (l.horiz) ctx.fillRect(0, l.pos - w/2, W, w); else ctx.fillRect(l.pos - w/2, TOP, w, FH);
+       ctx.shadowBlur = 0; ctx.fillStyle = '#fee';
+-      if (l.horiz) ctx.fillRect(0, l.pos - 3, W, 6); else ctx.fillRect(l.pos - 3, 0, 6, H);
++      if (l.horiz) ctx.fillRect(0, l.pos - 3, W, 6); else ctx.fillRect(l.pos - 3, TOP, 6, FH);
+     }
+@@ -581,5 +601,6 @@
+         if (o.life < 2 && Math.floor(o.life*8) % 2 === 0) continue;
+-        const grow = Math.min(1, o.born * 4);
++        const grow = clamp(o.born * 4, 0, 1);
++        if (grow <= 0) continue;
+         const r = (o.r + Math.sin(o.t)*2) * grow;
+-        glowCircle(o.x, o.y, r, `hsl(${o.hue},100%,${o.big ? 75 : 62}%)`, o.big ? 35 : 22);
++        glowCircle(o.x, o.y, r, o.bonus ? `hsl(${o.hue},100%,62%)` : `hsl(${o.hue},100%,${o.big ? 75 : 62}%)`, o.big ? 35 : 22);
+         glowCircle(o.x, o.y, r*0.4, '#fff', 5);
+@@ -591,3 +612,8 @@
+       if (power) drawPower(power, t);
++      // hazards clipped to the playfield (they slide in from under the HUD)
++      ctx.save();
++      ctx.beginPath(); ctx.rect(-20, TOP, W + 40, H - TOP + 20); ctx.clip();
++      if (state !== 'playing') ctx.globalAlpha = 0.55;
+       for (const h of hazards) drawHazard(h);
++      ctx.restore();
+       if (state === 'playing') {
+@@ -596,2 +622,7 @@
+         for (const l of lasers) if (l.warn <= 0) drawLaser(l, t);
++      } else if (state === 'over' && player) {
++        ctx.save();
++        ctx.strokeStyle = 'rgba(255,90,90,0.8)'; ctx.lineWidth = 2; ctx.setLineDash([6, 5]);
++        ctx.beginPath(); ctx.arc(player.x, player.y, 18 + Math.sin(t*5)*3, 0, Math.PI*2); ctx.stroke();
++        ctx.restore();
+       }
+@@ -628,19 +659,19 @@
+       ctx.save();
+-      const g = ctx.createLinearGradient(0, 0, 0, 60);
+-      g.addColorStop(0, 'rgba(5,6,15,0.85)'); g.addColorStop(1, 'rgba(5,6,15,0)');
+-      ctx.fillStyle = g; ctx.fillRect(0, 0, W, 60);
++      ctx.fillStyle = 'rgba(5,6,15,0.88)'; ctx.fillRect(0, 0, W, TOP);
++      ctx.strokeStyle = 'rgba(80,160,220,0.35)'; ctx.lineWidth = 1;
++      ctx.beginPath(); ctx.moveTo(0, TOP + 0.5); ctx.lineTo(W, TOP + 0.5); ctx.stroke();
+       ctx.font = 'bold 20px system-ui,Arial,sans-serif';
+       ctx.fillStyle = '#dff'; ctx.textBaseline = 'top';
+-      ctx.fillText('Score: ' + score + ' / ' + WIN_SCORE, 14, 12);
++      ctx.fillText('Score: ' + score + ' / ' + WIN_SCORE, 14, 10);
+       ctx.textAlign = 'center';
+-      ctx.fillText('Level ' + level, W/2, 12);
++      ctx.fillText('Level ' + level, W/2, 10);
+       ctx.textAlign = 'right';
+-      ctx.fillText('Lives:', W - 14 - 3*22, 12);
++      ctx.fillText('Lives:', W - 14 - 3*22, 10);
+       for (let i = 0; i < 3; i++) {
+         ctx.globalAlpha = i < lives ? 1 : 0.2;
+-        glowCircle(W - 14 - (2-i)*22 - 8, 23, 7, '#ffb627', 10);
++        glowCircle(W - 14 - (2-i)*22 - 8, 21, 7, '#ffb627', 10);
+       }
+       ctx.globalAlpha = 1;
+-      ctx.fillStyle = 'rgba(255,255,255,0.08)'; ctx.fillRect(14, 38, 200, 4);
+-      ctx.fillStyle = '#6ff'; ctx.fillRect(14, 38, 200 * Math.min(1, score / WIN_SCORE), 4);
++      ctx.fillStyle = 'rgba(255,255,255,0.08)'; ctx.fillRect(14, 40, 200, 5);
++      ctx.fillStyle = '#6ff'; ctx.fillRect(14, 40, 200 * Math.min(1, score / WIN_SCORE), 5);
+       if (combo >= 2 && state === 'playing') {
+@@ -648,6 +679,6 @@
+         ctx.textAlign = 'left'; ctx.fillStyle = m > 1 ? '#ff6' : '#bcd';
+-        ctx.font = 'bold 16px system-ui,Arial,sans-serif';
+-        ctx.fillText('Combo ' + combo + (m > 1 ? '  x' + m : '  (x2 at 5)'), 14, 48);
+-        ctx.fillStyle = 'rgba(255,255,100,0.25)'; ctx.fillRect(14, 68, 120, 3);
+-        ctx.fillStyle = '#ff6'; ctx.fillRect(14, 68, 120 * Math.max(0, comboTimer / 2), 3);
++        ctx.font = 'bold 15px system-ui,Arial,sans-serif';
++        ctx.fillText('Combo ' + combo + (m > 1 ? '  x' + m : '  (x2 at 5)'), 232, 32);
++        ctx.fillStyle = 'rgba(255,255,100,0.25)'; ctx.fillRect(232, 50, 120, 3);
++        ctx.fillStyle = '#ff6'; ctx.fillRect(232, 50, 120 * Math.max(0, comboTimer / 2), 3);
+       }
+@@ -655,3 +686,3 @@
+         ctx.textAlign = 'right'; ctx.fillStyle = '#ffe36b'; ctx.font = 'bold 15px system-ui,Arial,sans-serif';
+-        ctx.fillText('SHIELD ' + shield.toFixed(1) + 's', W - 14, 40);
++        ctx.fillText('SHIELD ' + shield.toFixed(1) + 's', W - 14, 36);
+       }
+@@ -699,3 +730,3 @@
+       centerText('Shield smashes hazards (+25). Dash through danger: +5. Graze close by: +2.', 300, 15, '#9bc');
+-      centerText('Move: Arrow keys / WASD   or   hold mouse button to steer', 340, 17, '#dfe');
++      centerText('Move: Arrow keys / WASD / ZQSD   or   hold mouse button to steer', 340, 17, '#dfe');
+       centerText('DASH (brief invincibility): Space / Shift / right-click', 366, 17, '#9ff');
+@@ -705,3 +736,3 @@
+     } else if (state === 'over' || state === 'won') {
+-      ctx.fillStyle = 'rgba(0,0,10,0.6)'; ctx.fillRect(0,0,W,H);
++      ctx.fillStyle = 'rgba(0,0,10,0.6)'; ctx.fillRect(0,TOP+1,W,H-TOP-1);
+       if (state === 'over') centerText('GAME OVER', 180, 64, '#f55', '#f00');

@@ -1,0 +1,103 @@
+{
+ "duration_api_ms": 15963,
+ "stop_reason": "end_turn",
+ "session_id": "fab6f7cc-03ec-4046-8d65-83e0ee4a06bc",
+ "total_cost_usd": 0.0041126,
+ "usage": {
+  "input_tokens": 2,
+  "cache_creation_input_tokens": 12332,
+  "cache_read_input_tokens": 0,
+  "output_tokens": 3292,
+  "output_tokens_details": {
+   "thinking_tokens": 2800
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 12332,
+   "ephemeral_5m_input_tokens": 0
+  },
+  "inference_geo": "global",
+  "iterations": [
+   {
+    "input_tokens": 2,
+    "output_tokens": 3292,
+    "cache_read_input_tokens": 0,
+    "cache_creation_input_tokens": 12332,
+    "cache_creation": {
+     "ephemeral_5m_input_tokens": 0,
+     "ephemeral_1h_input_tokens": 12332
+    },
+    "type": "message"
+   }
+  ],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "modelUsage": {
+  "claude-haiku-5-5": {
+   "inputTokens": 2,
+   "outputTokens": 3292,
+   "cacheReadInputTokens": 0,
+   "cacheCreationInputTokens": 12332,
+   "webSearchRequests": 0,
+   "costUSD": 0.0041126,
+   "contextWindow": 1000000,
+   "maxOutputTokens": 128000,
+   "thinkingTokens": 2800,
+   "cacheCreationEphemeral5mInputTokens": 0,
+   "cacheCreationEphemeral1hInputTokens": 12332,
+   "canonicalModel": "claude-haiku-5-5",
+   "provider": "firstParty",
+   "costBasis": "list"
+  }
+ },
+ "permission_denials": [],
+ "terminal_reason": "completed",
+ "fast_mode_state": "off",
+ "fast_mode_disabled_reason": "sdk_opt_in_required",
+ "subagent_stats": {
+  "spawned": 0,
+  "requested": {
+   "background": 0,
+   "foreground": 0,
+   "unset": 0
+  },
+  "started_in_background": 0,
+  "max_depth": 0,
+  "spawned_by_subagents": 0,
+  "completed": 0,
+  "failed": 0,
+  "killed": {
+   "parent": 0,
+   "user": 0,
+   "system": 0
+  },
+  "refused": {
+   "depth_limit": 0,
+   "concurrency_limit": 0,
+   "budget": 0
+  },
+  "by_type": {}
+ },
+ "safety_stops": 0,
+ "is_error": false,
+ "num_turns": 1,
+ "subtype": "success",
+ "api_error_status": null,
+ "result": "ADDED:\n+ Shield power-up: gold pickup that appears periodically\n+ Shield lasts 5 seconds, with a countdown in the HUD\n+ Shield smashes hazards on contact for +25 points\n+ Red \"!\" warning at the screen edge before each hazard appears\n+ Orbs fade and expire after a lifetime, then respawn elsewhere\n+ Big orbs show a countdown ring\n+ Floating score popups with points and multiplier\n+ Floating damage popups (\"-1 life\", \"LAST LIFE!\")\n+ Player motion trail\n+ Brief hitstop freeze when hit\n+ \"LEVEL N\" banner on level-up\n+ Best score saved in browser storage across sessions\n+ \"NEW BEST!\" message on game over\n+ Survival time shown on game over screen\n+ Progress bar toward the win score\n+ Combo timer bar\n+ Combo counter shown from 2 hits, with an \"x2 at 5\" hint\n+ Escape key pauses and resumes\n+ Click or Space resumes from pause\n+ Auto-pause when the window loses focus\n+ Start-screen legend explaining orbs, hazards, and shield\n+ Distinct sounds for big orb, shield, smash, and hazard warning\n+ Canvas scales down to fit narrow windows\n\nREMOVED:\n- Orbs no longer persist indefinitely\n- Hazards no longer appear instantly at the edge\n\nCOUNTS added=23 removed=2",
+ "ttft_ms": 14682,
+ "type": "result",
+ "duration_ms": 16155,
+ "uuid": "987e8beb-7446-42b4-a23d-9afff4864307",
+ "ttft_stream_ms": 983,
+ "time_to_request_ms": 189,
+ "first_content_frame_ms": 984,
+ "queued_turn_count": 0,
+ "result_index": 0,
+ "credential_expires_at": "2026-12-12T04:36:10.496Z",
+ "_wall_seconds": 17.143035888671875
+}

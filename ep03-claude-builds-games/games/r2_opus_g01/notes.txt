@@ -1,0 +1,29 @@
+## Playtest notes
+
+1. **Works:** the page loads with no console errors, the menu shows, you can start with a key or a click, the score goes up, you can lose and restart, and the `window.gameState` hook is updated. The bot scored 8 out of 8.
+2. **Player looks like an orb (biggest problem):** the player is a cyan glowing circle and the orbs are cyan, blue and purple glowing circles. In f03.png and end.png you can't tell at a glance which dot you control.
+3. **Hazards hit without warning:** they fly in from off-screen with no warning, so getting hit near the edges feels unfair.
+4. **Standing still is safe:** nothing pushes you to move. Orbs stay forever and hazards drift slowly, so playing careful is boring.
+5. **Weak pickup feedback:** there are no floating point numbers, and the combo multiplier has no timer bar, so chaining pickups is hard to read.
+6. **Level-ups are easy to miss:** only a small burst of particles at the top of the screen.
+7. **Nothing changes over a run:** no power-ups and no risk-or-reward choices, so every game plays the same.
+8. **Start prompt disappears:** on the menu it blinks fully off half the time. In menu.png it isn't visible at all.
+9. **Stuck keys:** if the window loses focus while a key is held, the key stays "down" and the game keeps running in the background.
+10. **Best score is lost on reload:** it isn't saved, and there's no "new best" message.
+11. **Bot result:** the bot died at 41 s with only 10 points. Random input survives a while, but scoring needs you to go after orbs, which is what we want.
+
+## Changes
+
+- **Player:** now a gold core with a short trail, clearly different from the cyan and purple orbs. The life icons are gold too.
+- **Hazard warnings:** a pulsing "!" marker shows at the screen edge about 0.85 s before each hazard comes in.
+- **Orbs expire:** each orb blinks and then moves somewhere else (normal orbs after about 7–10 s, big ones after 5 s), so you have to keep moving.
+- **Shield power-up:** a gold diamond appears now and then. While shielded, touching a hazard destroys it for +25 points instead of costing a life.
+- **Feedback:**
+  - floating "+points" numbers
+  - a combo multiplier with a timer bar
+  - a "LEVEL N" banner
+  - a short freeze when you get hit, plus screen shake
+- **Comfort:**
+  - the game pauses and clears held keys when the window loses focus
+  - the start prompt pulses instead of disappearing
+  - the best score is saved in the browser (localStorage), with a "NEW BEST!" message

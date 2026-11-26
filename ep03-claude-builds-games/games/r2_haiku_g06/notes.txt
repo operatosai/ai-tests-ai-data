@@ -1,0 +1,15 @@
+**PLAYTEST NOTES**
+
+- **Works:** The file loads with zero console errors and renders at about 23 fps in the headless run (115 frames in 5 s). The menu, play, game over, and restart loop all function, and the `window.gameState` hook updates.
+- **Menu:** Clear and legible, with the controls explained on screen. The rules block is dense, and the 16px control lines are small.
+- **HUD:** Score, time, best, danger, and the goal bar are readable over the playfield in every screenshot.
+- **Pacing is the main problem.** The bot reached only 7 points in 25 s. Goal 50 is far away, and most of a run is dodging with little reward.
+- **Orbs are too sparse and too small.** At most 5 are on screen, they live 7 s, they are worth 1 point each, and their radius is 7. In the screenshots they are dim against the dark background.
+- **Combos rarely form.** The 1.5 s combo window is tight when only 5 orbs exist, so the x2 to x4 multiplier is rarely seen.
+- **Hazards are large relative to the ship.** The 22 px hit reach against a 12 px ship feels tight, especially for dashers.
+- **Difficulty ramp is hard to perceive.** It shows up as a "DANGER n" popup and a counter, while hazard count and speed rise gradually.
+- **Idle run is inconclusive.** The report has `over: false, final: null`, so it doesn't show whether the idle run was in the menu or in play. I didn't change idle behavior.
+- **Not covered by the bot:** the win screen and blur-to-pause. Both are in the code but the playtest doesn't exercise them.
+- **Minor:** particles have no cap, so they can accumulate.
+
+Changes in this version: more orbs with longer life and a higher spawn rate, a wider combo window, a "almost there" cue near the goal, and a particle cap. Everything else is unchanged, and the test hook is still synced every frame.

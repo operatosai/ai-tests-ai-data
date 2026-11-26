@@ -1,0 +1,47 @@
+Below is a unified diff between two consecutive versions of a small HTML arcade game. Read ONLY the diff. List the player-visible features/mechanics ADDED and REMOVED (plain text, one short line each; ignore refactors). Then answer with a final line exactly: COUNTS added=<int> removed=<int>
+
+--- 
++++ 
+@@ -46,2 +46,3 @@
+   const COMBO_WINDOW = 2.0;   // seconds allowed between pickups to keep a combo
++  const COMBO_LOST_MIN = 3;   // combos at or above this announce when they break
+   const ORB_TARGET = 6;       // orbs kept on the field
+@@ -75,2 +76,3 @@
+   let comboT = 0;             // time left to extend the combo
++  let bestCombo = 0;          // longest combo in the current run
+   let stats = { orbs: 0, smashed: 0 };
+@@ -140,2 +142,3 @@
+     close: () => tone(1400, 0.07, 'sine', 0.06, 1800),
++    lost: () => tone(260, 0.22, 'triangle', 0.08, 140),
+     hit: () => tone(220, 0.5, 'sawtooth', 0.18, 40),
+@@ -279,2 +282,3 @@
+     comboT = 0;
++    bestCombo = 0;
+     lastDanger = 1;
+@@ -373,3 +377,11 @@
+       comboT -= dt;
+-      if (comboT <= 0) { comboT = 0; combo = 0; }
++      if (comboT <= 0) {
++        comboT = 0;
++        // A broken combo used to vanish silently; announce it when it mattered
++        if (combo >= COMBO_LOST_MIN) {
++          popups.push({ x: player.x, y: player.y - 34, text: 'COMBO LOST', life: 0.9, rgb: '255,122,160' });
++          sfx.lost();
++        }
++        combo = 0;
++      }
+     }
+@@ -433,2 +445,3 @@
+           combo = comboT > 0 ? combo + 1 : 1;
++          if (combo > bestCombo) bestCombo = combo;
+           comboT = COMBO_WINDOW;
+@@ -838,3 +851,3 @@
+     text(`Best: ${Math.max(best, score)}   Time: ${fmtTime(elapsed)}`, W / 2, 315, 18, '#cfe');
+-    text(`Orbs collected: ${stats.orbs}   Hazards smashed: ${stats.smashed}`, W / 2, 345, 16, '#8ff');
++    text(`Orbs: ${stats.orbs}   Smashed: ${stats.smashed}   Best combo: x${bestCombo}`, W / 2, 345, 16, '#8ff');
+     text(`Caught by ${KILLER_NAME[lastKiller] || 'a hazard'}`, W / 2, 372, 16, '#ff9ab8');
+@@ -854,3 +867,3 @@
+     text(`Best: ${Math.max(best, score)}`, W / 2, 315, 18, '#cfe');
+-    text(`Orbs collected: ${stats.orbs}   Hazards smashed: ${stats.smashed}`, W / 2, 345, 16, '#8ff');
++    text(`Orbs: ${stats.orbs}   Smashed: ${stats.smashed}   Best combo: x${bestCombo}`, W / 2, 345, 16, '#8ff');
+     if (newBest) glowText('NEW BEST!', W / 2, 382, 24, '#ffd23f');

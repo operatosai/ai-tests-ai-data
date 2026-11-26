@@ -1,0 +1,174 @@
+Below is a unified diff between two consecutive versions of a small HTML arcade game. Read ONLY the diff. List the player-visible features/mechanics ADDED and REMOVED (plain text, one short line each; ignore refactors). Then answer with a final line exactly: COUNTS added=<int> removed=<int>
+
+--- 
++++ 
+@@ -16,3 +16,3 @@
+   const W = cv.width, H = cv.height;
+-  const WIN_SCORE = 40, ORB_LIFE = 7, MAX_HAZ = 14;
++  const WIN_SCORE = 40, ORB_LIFE = 7, MAX_HAZ = 14, TOP = 80;
+   window.gameState = { score: 0, state: "menu" };
+@@ -20,4 +20,4 @@
+   let state = "menu", score = 0, lives = 3, time = 0, last = 0, paused = false;
+-  let player, orbs, hazards, pending, particles, spawnT, invuln, keys = {}, mouse = null, shake = 0;
+-  let combo = 0, comboT = 0, dash = 0, dashCd = 0, best = 0, newBest = false;
++  let player, orbs, hazards, pending, particles, floats, spawnT, invuln, keys = {}, mouse = null, shake = 0;
++  let combo = 0, comboT = 0, dash = 0, dashCd = 0, best = 0, newBest = false, lvlFlash = 0, lastLvl = 1;
+   try { best = parseInt(localStorage.getItem('orbrunner_best')) || 0; } catch (e) {}
+@@ -43,6 +43,6 @@
+   function reset() {
+-    player = { x: W / 2, y: H / 2, r: 14, speed: 300 };
+-    orbs = []; hazards = []; pending = []; particles = [];
++    player = { x: W / 2, y: H / 2 + 30, r: 14, speed: 300 };
++    orbs = []; hazards = []; pending = []; particles = []; floats = [];
+     score = 0; lives = 3; time = 0; spawnT = 0; invuln = 0; shake = 0;
+-    combo = 0; comboT = 0; dash = 0; dashCd = 0; paused = false; newBest = false;
++    combo = 0; comboT = 0; dash = 0; dashCd = 0; paused = false; newBest = false; lvlFlash = 0; lastLvl = 1;
+     for (let i = 0; i < 3; i++) spawnOrb();
+@@ -65,3 +65,3 @@
+     do {
+-      x = 40 + Math.random() * (W - 80); y = 60 + Math.random() * (H - 100); tries++;
++      x = 40 + Math.random() * (W - 80); y = TOP + Math.random() * (H - TOP - 40); tries++;
+     } while (tries < 20 && Math.hypot(x - player.x, y - player.y) < 80);
+@@ -74,7 +74,7 @@
+     let x, y;
+-    if (side === 0) { x = 14; y = 50 + Math.random() * (H - 70); }
+-    else if (side === 1) { x = W - 14; y = 50 + Math.random() * (H - 70); }
+-    else if (side === 2) { x = 14 + Math.random() * (W - 28); y = 50; }
++    if (side === 0) { x = 14; y = TOP + Math.random() * (H - TOP - 20); }
++    else if (side === 1) { x = W - 14; y = TOP + Math.random() * (H - TOP - 20); }
++    else if (side === 2) { x = 14 + Math.random() * (W - 28); y = TOP; }
+     else { x = 14 + Math.random() * (W - 28); y = H - 14; }
+-    const chaser = time > 40 ? Math.random() < 0.35 : (time > 20 && Math.random() < 0.25);
++    const chaser = time > 35 ? Math.random() < 0.35 : (time > 15 && Math.random() < 0.25);
+     pending.push({ x, y, t: delay, chaser });
+@@ -96,2 +96,3 @@
+   }
++  function floatText(t, x, y, color) { floats.push({ t, x, y, color, life: 0.8 }); }
+ 
+@@ -107,3 +108,3 @@
+     if (k === 'shift' && state === "playing" && !paused && dashCd <= 0) {
+-      dash = 0.2; dashCd = 2; beep(300, 0.15, 'triangle', 0.08, 400);
++      dash = 0.25; dashCd = 2; beep(300, 0.15, 'triangle', 0.08, 400);
+     }
+@@ -121,4 +122,13 @@
+     else if (paused) paused = false;
++    else if (dashCd <= 0 && e.button === 2) { dash = 0.25; dashCd = 2; beep(300, 0.15, 'triangle', 0.08, 400); }
+     mouse = mpos(e);
+   });
++  cv.addEventListener('contextmenu', e => e.preventDefault());
++
++  function loseLife() {
++    lives--; invuln = 1.5; shake = 10; combo = 0;
++    burst(player.x, player.y, '#f55', 25);
++    beep(120, 0.4, 'sawtooth', 0.15, -80);
++    if (lives <= 0) endGame("over");
++  }
+ 
+@@ -133,2 +143,5 @@
+     dashCd = Math.max(0, dashCd - dt);
++    lvlFlash = Math.max(0, lvlFlash - dt);
++    const lv = 1 + Math.floor(time / 15);
++    if (lv > lastLvl) { lastLvl = lv; lvlFlash = 1.2; beep(520, 0.25, 'square', 0.07, 300); }
+     if (comboT > 0) { comboT -= dt; if (comboT <= 0) combo = 0; }
+@@ -152,5 +165,4 @@
+ 
+-    // difficulty: more hazards over time
+     spawnT += dt;
+-    const interval = Math.max(0.7, 3.5 - time * 0.04);
++    const interval = Math.max(0.7, 3.2 - time * 0.04);
+     if (spawnT > interval) { spawnT = 0; queueHazard(); }
+@@ -165,3 +177,6 @@
+       if (o.life <= 0) {
+-        orbs.splice(i, 1); burst(o.x, o.y, '#388', 8); combo = 0; spawnOrb();
++        orbs.splice(i, 1); burst(o.x, o.y, '#f55', 10); combo = 0;
++        floatText('MISSED -♥', o.x, o.y, '#f66');
++        spawnOrb();
++        if (state === "playing") { lives--; shake = 6; beep(150, 0.3, 'sawtooth', 0.1, -60); if (lives <= 0) { endGame("over"); return; } }
+         continue;
+@@ -172,4 +187,5 @@
+         burst(o.x, o.y, '#6ff', 14);
++        floatText('+1', o.x, o.y, '#6ff');
+         beep(660 + Math.min(score, 20) * 20 + Math.min(combo, 8) * 30, 0.12, 'sine', 0.12, 300);
+-        if (combo > 0 && combo % 5 === 0 && lives < 5) { lives++; beep(990, 0.3, 'triangle', 0.12, 300); }
++        if (combo > 0 && combo % 5 === 0 && lives < 5) { lives++; floatText('+♥', player.x, player.y - 20, '#f88'); beep(990, 0.3, 'triangle', 0.12, 300); }
+         spawnOrb();
+@@ -180,2 +196,3 @@
+     }
++    if (state !== "playing") return;
+ 
+@@ -191,8 +208,6 @@
+       if (h.x < h.r && h.vx < 0 || h.x > W - h.r && h.vx > 0) h.vx *= -1;
+-      if (h.y < h.r && h.vy < 0 || h.y > H - h.r && h.vy > 0) h.vy *= -1;
+-      if (invuln <= 0 && Math.hypot(h.x - player.x, h.y - player.y) < h.r * 0.85 + player.r * 0.8) {
+-        lives--; invuln = 1.5; shake = 10; combo = 0;
+-        burst(player.x, player.y, '#f55', 25);
+-        beep(120, 0.4, 'sawtooth', 0.15, -80);
+-        if (lives <= 0) { endGame("over"); break; }
++      if (h.y < TOP - 30 + h.r && h.vy < 0 || h.y > H - h.r && h.vy > 0) h.vy *= -1;
++      if (invuln <= 0 && dash <= 0 && Math.hypot(h.x - player.x, h.y - player.y) < h.r * 0.85 + player.r * 0.8) {
++        loseLife();
++        if (state !== "playing") break;
+       }
+@@ -207,2 +222,6 @@
+       if (p.life <= 0) particles.splice(i, 1);
++    }
++    for (let i = floats.length - 1; i >= 0; i--) {
++      const f = floats[i]; f.y -= 40 * dt; f.life -= dt;
++      if (f.life <= 0) floats.splice(i, 1);
+     }
+@@ -232,2 +251,3 @@
+     ctx.closePath(); ctx.fill();
++    ctx.shadowBlur = 0;
+   }
+@@ -260,3 +280,3 @@
+       if (state !== "over" && !(invuln > 0 && Math.floor(invuln * 12) % 2)) {
+-        glowCircle(player.x, player.y, player.r, dash > 0 ? '#fff' : '#ffd84a', 22);
++        glowCircle(player.x, player.y, player.r, dash > 0 ? '#fff' : '#ffd84a', dash > 0 ? 35 : 22);
+       }
+@@ -265,2 +285,6 @@
+         glowCircle(p.x, p.y, 3, p.color, 8);
++      }
++      for (const f of floats) {
++        ctx.globalAlpha = Math.max(0, f.life / 0.8);
++        text(f.t, f.x, f.y, 16, f.color);
+       }
+@@ -272,8 +296,7 @@
+       const lvl = 1 + Math.floor(time / 15);
+-      text('LEVEL ' + lvl, W / 2, 30, 18, '#9af');
++      text('LEVEL ' + lvl, W / 2, 30, 18, lvlFlash > 0 && Math.floor(lvlFlash * 8) % 2 ? '#fff' : '#9af');
+       if (combo > 1) text('COMBO x' + combo + (combo % 5 ? '' : ' +♥'), W / 2, 54, 16, '#ffd84a');
+-      // dash bar
+       ctx.fillStyle = '#223'; ctx.fillRect(W - 116, 42, 100, 6);
+       ctx.fillStyle = dashCd > 0 ? '#58a' : '#5ff'; ctx.fillRect(W - 116, 42, 100 * (1 - dashCd / 2), 6);
+-      text('SHIFT dash', W - 16, 66, 12, '#889', 'right');
++      text('SHIFT dash (safe)', W - 16, 66, 12, '#889', 'right');
+     }
+@@ -281,14 +304,16 @@
+     if (state === "menu") {
+-      text('ORB RUNNER', W / 2, 170, 64, '#5ff');
+-      glowCircle(W / 2 - 170, 220, 8, '#5ff', 20);
+-      text('Collect glowing orbs (they fade, be quick)', W / 2 + 10, 226, 18, '#cfe');
+-      ctx.save(); ctx.translate(W / 2 - 170, 260); ctx.rotate(0.3); spike(10, '#e22', '#f33'); ctx.restore();
+-      text('Avoid the red spikes', W / 2 + 10, 266, 18, '#fcc');
+-      ctx.save(); ctx.translate(W / 2 - 170, 300); ctx.rotate(0.3); spike(10, '#a3e', '#c6f'); ctx.restore();
+-      text('Purple spikes hunt you later on', W / 2 + 10, 306, 18, '#e9f');
+-      text('Move: WASD / Arrows, or the mouse', W / 2, 355, 20, '#fff');
+-      text('SHIFT = dash   P / Esc = pause', W / 2, 382, 18, '#fff');
+-      text('Reach ' + WIN_SCORE + ' orbs to win. 5 orbs in a combo = +1 life.', W / 2, 410, 16, '#9af');
+-      if (best) text('Best: ' + best, W / 2, 436, 16, '#889');
+-      text('Click or press SPACE to start', W / 2, 490, 26, '#ffd84a');
++      text('ORB RUNNER', W / 2, 150, 64, '#5ff');
++      const lx = 170, tx = 205;
++      glowCircle(lx, 212, 8, '#5ff', 20);
++      text('Collect glowing orbs. Missed orbs cost a life!', tx, 218, 18, '#cfe', 'left');
++      ctx.save(); ctx.translate(lx, 252); ctx.rotate(0.3); spike(10, '#e22', '#f33'); ctx.restore();
++      text('Avoid the red spikes', tx, 258, 18, '#fcc', 'left');
++      ctx.save(); ctx.translate(lx, 292); ctx.rotate(0.3); spike(10, '#a3e', '#c6f'); ctx.restore();
++      text('Purple spikes hunt you later on', tx, 298, 18, '#e9f', 'left');
++      text('Move: WASD / Arrows, or the mouse', W / 2, 350, 20, '#fff');
++      text('SHIFT (or right-click) = dash, safe from spikes', W / 2, 378, 18, '#fff');
++      text('P / Esc = pause', W / 2, 402, 18, '#fff');
++      text('Reach ' + WIN_SCORE + ' orbs to win. 5 orbs in a combo = +1 life.', W / 2, 434, 16, '#9af');
++      if (best) text('Best: ' + best, W / 2, 458, 16, '#889');
++      text('Click or press SPACE to start', W / 2, 515, 26, '#ffd84a');
+     } else if (paused && state === "playing") {

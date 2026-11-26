@@ -1,0 +1,103 @@
+{
+ "duration_api_ms": 8841,
+ "stop_reason": "end_turn",
+ "session_id": "45150ad4-b8a2-4264-88be-83952f4877c4",
+ "total_cost_usd": 0.0021812000000000003,
+ "usage": {
+  "input_tokens": 2,
+  "cache_creation_input_tokens": 6800,
+  "cache_read_input_tokens": 0,
+  "output_tokens": 1642,
+  "output_tokens_details": {
+   "thinking_tokens": 1451
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 6800,
+   "ephemeral_5m_input_tokens": 0
+  },
+  "inference_geo": "global",
+  "iterations": [
+   {
+    "input_tokens": 2,
+    "output_tokens": 1642,
+    "cache_read_input_tokens": 0,
+    "cache_creation_input_tokens": 6800,
+    "cache_creation": {
+     "ephemeral_5m_input_tokens": 0,
+     "ephemeral_1h_input_tokens": 6800
+    },
+    "type": "message"
+   }
+  ],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "modelUsage": {
+  "claude-haiku-5-5": {
+   "inputTokens": 2,
+   "outputTokens": 1642,
+   "cacheReadInputTokens": 0,
+   "cacheCreationInputTokens": 6800,
+   "webSearchRequests": 0,
+   "costUSD": 0.0021812000000000003,
+   "contextWindow": 1000000,
+   "maxOutputTokens": 128000,
+   "thinkingTokens": 1451,
+   "cacheCreationEphemeral5mInputTokens": 0,
+   "cacheCreationEphemeral1hInputTokens": 6800,
+   "canonicalModel": "claude-haiku-5-5",
+   "provider": "firstParty",
+   "costBasis": "list"
+  }
+ },
+ "permission_denials": [],
+ "terminal_reason": "completed",
+ "fast_mode_state": "off",
+ "fast_mode_disabled_reason": "sdk_opt_in_required",
+ "subagent_stats": {
+  "spawned": 0,
+  "requested": {
+   "background": 0,
+   "foreground": 0,
+   "unset": 0
+  },
+  "started_in_background": 0,
+  "max_depth": 0,
+  "spawned_by_subagents": 0,
+  "completed": 0,
+  "failed": 0,
+  "killed": {
+   "parent": 0,
+   "user": 0,
+   "system": 0
+  },
+  "refused": {
+   "depth_limit": 0,
+   "concurrency_limit": 0,
+   "budget": 0
+  },
+  "by_type": {}
+ },
+ "safety_stops": 0,
+ "is_error": false,
+ "num_turns": 1,
+ "subtype": "success",
+ "api_error_status": null,
+ "result": "**Added**\n- Near-miss \"GRAZE\": passing close to a hazard without touching it gives +2 score and extends the combo timer\n- Red screen flash when the player takes damage\n- Cause of death shown on the game-over screen (laser, hunter, or spike mine)\n- Graze count shown on the game-over screen\n- Esc key also pauses the game\n- Top HUD band is kept free of hazard, orb, and power-up spawns\n- Dodge bonus can be earned again after moving away from a hazard\n\n**Removed**\n- None\n\nCOUNTS added=7 removed=0",
+ "ttft_ms": 8216,
+ "type": "result",
+ "duration_ms": 8976,
+ "uuid": "c803fc63-0ee2-4ee2-9a03-db8d7c3129d6",
+ "ttft_stream_ms": 842,
+ "time_to_request_ms": 132,
+ "first_content_frame_ms": 843,
+ "queued_turn_count": 0,
+ "result_index": 0,
+ "credential_expires_at": "2026-12-12T04:36:10.496Z",
+ "_wall_seconds": 9.9075288772583
+}

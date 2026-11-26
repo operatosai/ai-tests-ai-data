@@ -1,0 +1,37 @@
+Below is a unified diff between two consecutive versions of a small HTML arcade game. Read ONLY the diff. List the player-visible features/mechanics ADDED and REMOVED (plain text, one short line each; ignore refactors). Then answer with a final line exactly: COUNTS added=<int> removed=<int>
+
+--- 
++++ 
+@@ -21,3 +21,3 @@
+   let player, orbs, hazards, pending, particles, floats, spawnT, invuln, keys = {}, mouse = null, shake = 0;
+-  let combo = 0, comboT = 0, dash = 0, dashCd = 0, best = 0, newBest = false, lvlFlash = 0, lastLvl = 1, goldT = 10;
++  let combo = 0, comboT = 0, dash = 0, dashCd = 0, best = 0, newBest = false, lvlFlash = 0, lastLvl = 1, goldT = 10, ready = 0;
+   const stars = [];
+@@ -49,3 +49,3 @@
+     score = 0; lives = 4; time = 0; spawnT = 0; invuln = 0; shake = 0; goldT = 10;
+-    combo = 0; comboT = 0; dash = 0; dashCd = 0; paused = false; newBest = false; lvlFlash = 0; lastLvl = 1;
++    combo = 0; comboT = 0; dash = 0; dashCd = 0; paused = false; newBest = false; lvlFlash = 0; lastLvl = 1; ready = 0;
+     for (let i = 0; i < 3; i++) { spawnOrb(); orbs[i].life += i * 3; orbs[i].max = orbs[i].life; }
+@@ -55,3 +55,3 @@
+   function start() {
+-    reset(); state = "playing"; sync();
++    reset(); state = "playing"; invuln = 1.5; ready = 1.5; sync();
+     beep(440, 0.15, 'square', 0.08, 220);
+@@ -159,2 +159,3 @@
+     time += dt;
++    ready = Math.max(0, ready - dt);
+     invuln = Math.max(0, invuln - dt);
+@@ -348,5 +349,10 @@
+       if (combo > 1) text('COMBO x' + combo + (combo % 5 ? '' : ' +♥'), W / 2, 54, 16, '#ffd84a');
+-      ctx.fillStyle = '#223'; ctx.fillRect(W - 116, 46, 100, 6);
+-      ctx.fillStyle = dashCd > 0 ? '#58a' : '#5ff'; ctx.fillRect(W - 116, 46, 100 * (1 - dashCd / 2), 6);
+-      text('SHIFT dash (safe)' + (muted ? '  [muted]' : ''), W - 16, 68, 12, '#889', 'right');
++      ctx.fillStyle = '#223'; ctx.fillRect(W - 136, 42, 120, 8);
++      ctx.fillStyle = dashCd > 0 ? '#58a' : '#5ff'; ctx.fillRect(W - 136, 42, 120 * (1 - dashCd / 2), 8);
++      text('SHIFT dash (safe)' + (muted ? '  [muted]' : ''), W - 16, 68, 13, '#99a', 'right');
++      if (ready > 0 && state === "playing" && !paused) {
++        ctx.globalAlpha = Math.min(1, ready);
++        text('GET READY', W / 2, H / 2 - 40, 36, '#ffd84a');
++        ctx.globalAlpha = 1;
++      }
+     }

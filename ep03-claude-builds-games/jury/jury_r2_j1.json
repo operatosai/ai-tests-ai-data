@@ -1,0 +1,243 @@
+[
+ {
+  "G26": {
+   "clarity": 6,
+   "polish": 6,
+   "feel": 5,
+   "depth": 4,
+   "appeal": 4
+  },
+  "G24": {
+   "clarity": 8,
+   "polish": 8,
+   "feel": 8,
+   "depth": 8,
+   "appeal": 7
+  },
+  "G25": {
+   "clarity": 5,
+   "polish": 6,
+   "feel": 5,
+   "depth": 4,
+   "appeal": 4
+  },
+  "G92": {
+   "clarity": 5,
+   "polish": 6,
+   "feel": 5,
+   "depth": 4,
+   "appeal": 4
+  },
+  "G85": {
+   "clarity": 6,
+   "polish": 6,
+   "feel": 5,
+   "depth": 4,
+   "appeal": 4
+  },
+  "G83": {
+   "clarity": 7,
+   "polish": 7,
+   "feel": 6,
+   "depth": 6,
+   "appeal": 5
+  },
+  "G36": {
+   "clarity": 6,
+   "polish": 6,
+   "feel": 5,
+   "depth": 4,
+   "appeal": 4
+  }
+ },
+ {
+  "G22": {
+   "clarity": 7,
+   "polish": 7,
+   "feel": 7,
+   "depth": 7,
+   "appeal": 6
+  },
+  "G72": {
+   "clarity": 6,
+   "polish": 7,
+   "feel": 7,
+   "depth": 8,
+   "appeal": 7
+  },
+  "G75": {
+   "clarity": 6,
+   "polish": 6,
+   "feel": 6,
+   "depth": 5,
+   "appeal": 5
+  },
+  "G61": {
+   "clarity": 6,
+   "polish": 6,
+   "feel": 6,
+   "depth": 5,
+   "appeal": 5
+  },
+  "G20": {
+   "clarity": 7,
+   "polish": 7,
+   "feel": 7,
+   "depth": 7,
+   "appeal": 6
+  },
+  "G34": {
+   "clarity": 5,
+   "polish": 6,
+   "feel": 5,
+   "depth": 5,
+   "appeal": 5
+  },
+  "G97": {
+   "clarity": 5,
+   "polish": 5,
+   "feel": 4,
+   "depth": 3,
+   "appeal": 4
+  }
+ },
+ {
+  "G69": {
+   "clarity": 6,
+   "polish": 6,
+   "feel": 5,
+   "depth": 5,
+   "appeal": 5
+  },
+  "G23": {
+   "clarity": 6,
+   "polish": 6,
+   "feel": 6,
+   "depth": 5,
+   "appeal": 5
+  },
+  "G32": {
+   "clarity": 6,
+   "polish": 6,
+   "feel": 5,
+   "depth": 5,
+   "appeal": 5
+  },
+  "G89": {
+   "clarity": 6,
+   "polish": 7,
+   "feel": 6,
+   "depth": 5,
+   "appeal": 6
+  },
+  "G74": {
+   "clarity": 6,
+   "polish": 7,
+   "feel": 7,
+   "depth": 6,
+   "appeal": 6
+  },
+  "G70": {
+   "clarity": 6,
+   "polish": 6,
+   "feel": 6,
+   "depth": 5,
+   "appeal": 5
+  },
+  "G63": {
+   "clarity": 6,
+   "polish": 7,
+   "feel": 6,
+   "depth": 6,
+   "appeal": 6
+  }
+ },
+ {
+  "G35": {
+   "clarity": 6,
+   "polish": 6,
+   "feel": 5,
+   "depth": 4,
+   "appeal": 5
+  },
+  "G40": {
+   "clarity": 7,
+   "polish": 8,
+   "feel": 7,
+   "depth": 7,
+   "appeal": 7
+  },
+  "G81": {
+   "clarity": 6,
+   "polish": 6,
+   "feel": 5,
+   "depth": 4,
+   "appeal": 5
+  },
+  "G86": {
+   "clarity": 6,
+   "polish": 6,
+   "feel": 5,
+   "depth": 5,
+   "appeal": 5
+  },
+  "G46": {
+   "clarity": 8,
+   "polish": 8,
+   "feel": 8,
+   "depth": 8,
+   "appeal": 8
+  },
+  "G38": {
+   "clarity": 6,
+   "polish": 6,
+   "feel": 5,
+   "depth": 4,
+   "appeal": 5
+  },
+  "G10": {
+   "clarity": 7,
+   "polish": 8,
+   "feel": 7,
+   "depth": 7,
+   "appeal": 7
+  }
+ },
+ {
+  "G67": {
+   "clarity": 8,
+   "polish": 8,
+   "feel": 8,
+   "depth": 8,
+   "appeal": 7
+  },
+  "G50": {
+   "clarity": 6,
+   "polish": 6,
+   "feel": 6,
+   "depth": 5,
+   "appeal": 5
+  },
+  "G66": {
+   "clarity": 7,
+   "polish": 7,
+   "feel": 7,
+   "depth": 7,
+   "appeal": 6
+  },
+  "G11": {
+   "clarity": 5,
+   "polish": 4,
+   "feel": 4,
+   "depth": 3,
+   "appeal": 3
+  },
+  "G80": {
+   "clarity": 6,
+   "polish": 7,
+   "feel": 6,
+   "depth": 6,
+   "appeal": 5
+  }
+ }
+]

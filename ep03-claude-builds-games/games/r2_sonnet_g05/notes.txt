@@ -1,0 +1,16 @@
+**Playtest notes**
+- It loads cleanly with no console errors. The `gameState` hook updates, and the menu → play → game over → restart loop works.
+- The menu is clear and lists every control. The HUD is readable, and the neon look and glow effects suit the theme.
+- The random bot lost at about 9.7s and scored only 1. The early game is harsh: three orbs expire at 10s each and each one costs a life, so a passive or clumsy player is punished quickly.
+- Hazards bounce at `TOP-30`, so they can drift under the HUD strip and become invisible and unfair. I couldn't confirm this from the screenshots.
+- There's no way to mute the sound, and nothing happens when you dash except the cooldown bar, so dashing feels flat.
+- There's no touch support.
+- Difficulty ramps through hazard speed, spawn rate and chasers, which is good. The 40-point win condition gives a clear goal.
+- The bot never reached the win state or the chaser phase, so I couldn't check the later difficulty.
+
+**Changes**
+- Hazards now bounce at the top edge of the play area, so they stay visible.
+- Orbs last 4s longer during the first 20s, which gives players an easier start.
+- A dash leaves a trail of cyan particles.
+- Pressing M toggles sound, and the menu says so.
+- Touch drag moves the player, and a tap starts or resumes the game.

@@ -1,0 +1,59 @@
+Below is a unified diff between two consecutive versions of a small HTML arcade game. Read ONLY the diff. List the player-visible features/mechanics ADDED and REMOVED (plain text, one short line each; ignore refactors). Then answer with a final line exactly: COUNTS added=<int> removed=<int>
+
+--- 
++++ 
+@@ -16,3 +16,3 @@
+   const W = cv.width, H = cv.height;
+-  const WIN_SCORE = 40, ORB_LIFE = 7, MAX_HAZ = 14, TOP = 80;
++  const WIN_SCORE = 40, ORB_LIFE = 10, MAX_HAZ = 14, TOP = 80;
+   window.gameState = { score: 0, state: "menu" };
+@@ -251,2 +251,11 @@
+ 
++  function drawPlayer(x, y, r, dashing) {
++    ctx.shadowColor = dashing ? '#fff' : '#f4f'; ctx.shadowBlur = dashing ? 35 : 22;
++    ctx.fillStyle = '#fff';
++    ctx.beginPath(); ctx.arc(x, y, r, 0, 6.283); ctx.fill();
++    ctx.shadowBlur = 0;
++    ctx.strokeStyle = dashing ? '#9ff' : '#f4f'; ctx.lineWidth = 3;
++    ctx.beginPath(); ctx.arc(x, y, r + 2, 0, 6.283); ctx.stroke();
++  }
++
+   function text(t, x, y, size, color, align = 'center') {
+@@ -300,3 +309,3 @@
+       if (state !== "over" && !(invuln > 0 && Math.floor(invuln * 12) % 2)) {
+-        glowCircle(player.x, player.y, player.r, dash > 0 ? '#fff' : '#ffd84a', dash > 0 ? 35 : 22);
++        drawPlayer(player.x, player.y, player.r, dash > 0);
+       }
+@@ -326,16 +335,18 @@
+       const lx = 170, tx = 205;
+-      glowCircle(lx, 212, 8, '#5ff', 20);
+-      text('Collect glowing orbs. Missed orbs cost a life!', tx, 218, 18, '#cfe', 'left');
+-      ctx.save(); ctx.translate(lx, 252); ctx.rotate(0.3); spike(10, '#e22', '#f33'); ctx.restore();
+-      text('Avoid the red spikes', tx, 258, 18, '#fcc', 'left');
+-      ctx.save(); ctx.translate(lx, 292); ctx.rotate(0.3); spike(10, '#a3e', '#c6f'); ctx.restore();
+-      text('Purple spikes hunt you later on', tx, 298, 18, '#e9f', 'left');
+-      glowCircle(lx, 332, 8, '#fd4', 20);
+-      text('Golden orbs = 3 points (no penalty if missed)', tx, 338, 18, '#fe9', 'left');
+-      text('Move: WASD / Arrows, or the mouse', W / 2, 380, 20, '#fff');
+-      text('SHIFT (or right-click) = dash, safe from spikes', W / 2, 406, 18, '#fff');
+-      text('P / Esc = pause', W / 2, 430, 18, '#fff');
+-      text('Reach ' + WIN_SCORE + ' points to win. 5 orbs in a combo = +1 life.', W / 2, 460, 16, '#9af');
+-      if (best) text('Best: ' + best, W / 2, 484, 16, '#889');
+-      text('Click or press SPACE to start', W / 2, 535, 26, '#ffd84a');
++      drawPlayer(lx, 182, 8, false);
++      text('You are the white ball with the pink ring', tx, 188, 18, '#fff', 'left');
++      glowCircle(lx, 222, 8, '#5ff', 20);
++      text('Collect cyan orbs. Missed orbs cost a life!', tx, 228, 18, '#cfe', 'left');
++      ctx.save(); ctx.translate(lx, 262); ctx.rotate(0.3); spike(10, '#e22', '#f33'); ctx.restore();
++      text('Avoid the red spikes', tx, 268, 18, '#fcc', 'left');
++      ctx.save(); ctx.translate(lx, 302); ctx.rotate(0.3); spike(10, '#a3e', '#c6f'); ctx.restore();
++      text('Purple spikes hunt you later on', tx, 308, 18, '#e9f', 'left');
++      glowCircle(lx, 342, 8, '#fd4', 20);
++      text('Golden orbs = 3 points (no penalty if missed)', tx, 348, 18, '#fe9', 'left');
++      text('Move: WASD / Arrows, or the mouse', W / 2, 390, 20, '#fff');
++      text('SHIFT (or right-click) = dash, safe from spikes', W / 2, 416, 18, '#fff');
++      text('P / Esc = pause', W / 2, 440, 18, '#fff');
++      text('Reach ' + WIN_SCORE + ' points to win. 5 orbs in a combo = +1 life.', W / 2, 468, 16, '#9af');
++      if (best) text('Best: ' + best, W / 2, 490, 16, '#889');
++      text('Click or press SPACE to start', W / 2, 540, 26, '#ffd84a');
+     } else if (paused && state === "playing") {

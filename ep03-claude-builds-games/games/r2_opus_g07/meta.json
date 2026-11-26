@@ -1,0 +1,41 @@
+{
+ "model": "opus",
+ "gen": 7,
+ "seconds": 214.50377130508423,
+ "usage": {
+  "input_tokens": 4,
+  "cache_creation_input_tokens": 29022,
+  "cache_read_input_tokens": 24506,
+  "output_tokens": 28134,
+  "output_tokens_details": {
+   "thinking_tokens": 4309
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 29022,
+   "ephemeral_5m_input_tokens": 0
+  },
+  "inference_geo": "global",
+  "iterations": [
+   {
+    "input_tokens": 2,
+    "output_tokens": 27612,
+    "cache_read_input_tokens": 23435,
+    "cache_creation_input_tokens": 6658,
+    "cache_creation": {
+     "ephemeral_5m_input_tokens": 0,
+     "ephemeral_1h_input_tokens": 6658
+    },
+    "type": "message"
+   }
+  ],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "has_html": true,
+ "based_on": "r2_opus_g06"
+}

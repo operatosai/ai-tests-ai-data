@@ -1,0 +1,21 @@
+**Playtest notes**
+
+1. Everything in the report passed (8/8): the game loads, takes input, scores, can be lost and restarts with no console errors. The idle run stayed on the menu as expected, because nothing starts the game without input.
+2. Menu (menu.png): it's clear and well laid out, but the "Press ENTER / SPACE or CLICK to start" line pulses down to about 40% opacity, so at times it's the faintest thing on screen. It should be the most visible.
+3. In-game (f01, f03, f05): the HUD is clean. Score, progress bar, level, lives and dash meter are all easy to read.
+4. Small orbs are tiny next to the player (about 6–10 px across) and look a lot like the background particles. They're the main goal, so they should stand out more.
+5. Small orbs give no warning before they vanish except blinking in their last 2 seconds. Only big orbs have a countdown ring, so a small orb often disappears just as you reach it.
+6. f03 / f05: by level 3 the screen is full of red mines and nothing else is going on. The background is a flat grid with no depth, and the game feels empty and quiet between pickups.
+7. Lives are lost and never come back. After the first hit or two you're just waiting for the game to end. A rare pickup that gives a life back would add hope and a reason to take risks.
+8. There's no music, only sound effects, so the game has no sense of rhythm. A beat that speeds up with each level would make the difficulty climb easier to feel.
+9. Losing your last life looks the same as any other hit (same burst, same sound). It needs a bigger explosion.
+10. end.png shows a fresh run after a restart, which confirms restarting from game over works.
+
+**What I changed**
+- **Music:** added a looping bass, arpeggio and hi-hat track built in code. It gets faster each level, adds layers as you progress, and stops when paused, on game over, or with M. All sound now goes through one master volume control.
+- **New pickup:** if you've lost a life, the power-up has a 40% chance (from level 2) to be a green +1 life cross instead of a shield. It's explained on the menu.
+- **Orbs:** small orbs are slightly bigger with a stronger glow, and they now have a countdown ring like the big ones.
+- **Background:** added a starfield that drifts slowly and shifts a little as the player moves, to give the scene depth.
+- **Final hit:** losing the last life now triggers a bigger explosion, a large shockwave ring and more screen shake.
+- **Prompts:** the start and play-again prompts stay clearly visible while they pulse.
+- **Unchanged:** controls, scoring, the 1000-point win, pause and mute, and the `window.gameState` test hook (updated on every state and score change) all work as before.

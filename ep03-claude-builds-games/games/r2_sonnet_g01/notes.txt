@@ -1,0 +1,20 @@
+**Playtest notes**
+- It loads, renders and has no console errors. The menu is clear and explains the controls.
+- The bot reached "over" at about 25s and restart worked. The state hook updates correctly.
+- The idle run never lost in 60s. Hazards are aimed with a spread and bounce, so standing still in the middle is nearly safe. That's a design hole.
+- Orbs never expire, so there is no pressure to move and no reason to take risks.
+- The difficulty ramp is only more and faster spikes. There is no variety, and the spikes appear with no warning, directly at the edge.
+- There is no pause, no best score, and no combo or skill reward.
+- Score is only a count to 40, and the win/loss screens are bare.
+- In the screenshots the HUD "LIVES" hearts are small and a bit hard to read.
+- Sound is minimal but works.
+
+**Changes**
+- Spawn warnings: a marker shows at the edge before each spike appears.
+- Chaser spikes: purple spikes that home in on the player from level 3. They also punish idling.
+- Orbs: they now expire after about 7s and blink before they do. Collecting several quickly builds a combo.
+- Best score: stored in localStorage, with a fallback if storage isn't available.
+- Pause: press P or Esc. The game also pauses when the window loses focus.
+- Speed boost: Shift gives a short dash, with a cooldown bar.
+- Hook: it is synced every frame.
+- Hazards: capped at 14.

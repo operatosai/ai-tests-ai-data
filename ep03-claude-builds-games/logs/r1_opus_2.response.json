@@ -1,0 +1,103 @@
+{
+ "duration_api_ms": 64941,
+ "stop_reason": "end_turn",
+ "session_id": "14ce4712-d2ee-4a84-b68f-8033fcf47e24",
+ "total_cost_usd": 0.15817820000000005,
+ "usage": {
+  "input_tokens": 2,
+  "cache_creation_input_tokens": 0,
+  "cache_read_input_tokens": 851,
+  "output_tokens": 7900,
+  "output_tokens_details": {
+   "thinking_tokens": 198
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 0,
+   "ephemeral_5m_input_tokens": 0
+  },
+  "inference_geo": "global",
+  "iterations": [
+   {
+    "input_tokens": 2,
+    "output_tokens": 7900,
+    "cache_read_input_tokens": 851,
+    "cache_creation_input_tokens": 0,
+    "cache_creation": {
+     "ephemeral_5m_input_tokens": 0,
+     "ephemeral_1h_input_tokens": 0
+    },
+    "type": "message"
+   }
+  ],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "modelUsage": {
+  "claude-opus-5-5": {
+   "inputTokens": 2,
+   "outputTokens": 7900,
+   "cacheReadInputTokens": 851,
+   "cacheCreationInputTokens": 0,
+   "webSearchRequests": 0,
+   "costUSD": 0.15817820000000005,
+   "contextWindow": 1000000,
+   "maxOutputTokens": 128000,
+   "thinkingTokens": 198,
+   "cacheCreationEphemeral5mInputTokens": 0,
+   "cacheCreationEphemeral1hInputTokens": 0,
+   "canonicalModel": "claude-opus-5-5",
+   "provider": "firstParty",
+   "costBasis": "list"
+  }
+ },
+ "permission_denials": [],
+ "terminal_reason": "completed",
+ "fast_mode_state": "off",
+ "fast_mode_disabled_reason": "sdk_opt_in_required",
+ "subagent_stats": {
+  "spawned": 0,
+  "requested": {
+   "background": 0,
+   "foreground": 0,
+   "unset": 0
+  },
+  "started_in_background": 0,
+  "max_depth": 0,
+  "spawned_by_subagents": 0,
+  "completed": 0,
+  "failed": 0,
+  "killed": {
+   "parent": 0,
+   "user": 0,
+   "system": 0
+  },
+  "refused": {
+   "depth_limit": 0,
+   "concurrency_limit": 0,
+   "budget": 0
+  },
+  "by_type": {}
+ },
+ "safety_stops": 0,
+ "is_error": false,
+ "num_turns": 1,
+ "subtype": "success",
+ "api_error_status": null,
+ "result": "**Orb Rush**: collect glowing orbs and dodge the red spiked hazards. More hazards appear and they move faster over time. Reach 1000 points to win.\n\n```html\n<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"UTF-8\">\n<title>Orb Rush</title>\n<style>\n  html,body{margin:0;height:100%;background:#05060f;display:flex;align-items:center;justify-content:center;font-family:system-ui,Segoe UI,Arial,sans-serif;color:#cfe;}\n  #wrap{position:relative;}\n  canvas{display:block;background:radial-gradient(ellipse at center,#111a33 0%,#05060f 80%);border:2px solid #234;border-radius:8px;box-shadow:0 0 30px #0af4;cursor:crosshair;}\n  #help{text-align:center;font-size:13px;color:#8ab;margin-top:8px;}\n</style>\n</head>\n<body>\n<div id=\"wrap\">\n  <canvas id=\"c\" width=\"800\" height=\"560\"></canvas>\n  <div id=\"help\">Move: Arrow keys / WASD, or hold the mouse button to steer toward the cursor &middot; P: pause &middot; M: mute</div>\n</div>\n<script>\n(function(){\n  const cv = document.getElementById('c');\n  const ctx = cv.getContext('2d');\n  const W = cv.width, H = cv.height;\n  const WIN_SCORE = 1000;\n\n  window.gameState = { score: 0, state: \"menu\" };\n\n  // ---------- Audio (generated) ----------\n  let actx = null, muted = false;\n  function initAudio(){\n    if (!actx) {\n      try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) { actx = null; }\n    }\n    if (actx && actx.state === 'suspended') actx.resume();\n  }\n  function tone(freq, dur, type, vol, slideTo){\n    if (!actx || muted) return;\n    const t = actx.currentTime;\n    const o = actx.createOscillator(), g = actx.createGain();\n    o.type = type || 'sine';\n    o.frequency.setValueAtTime(freq, t);\n    if (slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, t + dur);\n    g.gain.setValueAtTime(vol || 0.15, t);\n    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);\n    o.connect(g); g.connect(actx.destination);\n    o.start(t); o.stop(t + dur + 0.02);\n  }\n  const sfx = {\n    orb(combo){ tone(520 + Math.min(combo,10)*40, 0.12, 'sine', 0.15, 1200 + combo*60); },\n    hit(){ tone(220, 0.35, 'sawtooth', 0.2, 50); },\n    over(){ tone(400,0.25,'triangle',0.2,200); setTimeout(()=>tone(260,0.5,'triangle',0.2,80),220); },\n    win(){ [523,659,784,1046].forEach((f,i)=>setTimeout(()=>tone(f,0.25,'square',0.1),i*130)); },\n    start(){ tone(330,0.1,'square',0.1,660); },\n    level(){ tone(880,0.15,'triangle',0.1,1320); }\n  };\n\n  // ---------- Input ----------\n  const keys = {};\n  const mouse = { x: W/2, y: H/2, down: false };\n  window.addEventListener('keydown', e => {\n    const k = e.key.toLowerCase();\n    if (['arrowup','arrowdown','arrowleft','arrowright',' '].includes(k)) e.preventDefault();\n    keys[k] = true;\n    initAudio();\n    if (k === 'm') { muted = !muted; return; }\n    if (state === 'playing' && k === 'p') { paused = !paused; return; }\n    if ((k === 'enter' || k === ' ') && state !== 'playing') startGame();\n  });\n  window.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });\n  function mpos(e){\n    const r = cv.getBoundingClientRect();\n    mouse.x = (e.clientX - r.left) * (W / r.width);\n    mouse.y = (e.clientY - r.top) * (H / r.height);\n  }\n  cv.addEventListener('mousemove', mpos);\n  cv.addEventListener('mousedown', e => {\n    mpos(e); initAudio();\n    if (state !== 'playing') { startGame(); return; }\n    mouse.down = true;\n  });\n  window.addEventListener('mouseup', () => { mouse.down = false; });\n  cv.addEventListener('contextmenu', e => e.preventDefault());\n\n  // ---------- Game state ----------\n  let state = 'menu', paused = false;\n  let player, orbs, hazards, particles, score, lives, elapsed, level, spawnTimer, combo, comboTimer, invuln, shake, best = 0, overTimer = 0;\n\n  function setState(s){ state = s; window.gameState.state = s; }\n  function setScore(v){ score = v; window.gameState.score = v; }\n\n  function reset(){\n    player = { x: W/2, y: H/2, r: 12, speed: 280 };\n    orbs = []; hazards = []; particles = [];\n    setScore(0);\n    lives = 3; elapsed = 0; level = 1; spawnTimer = 0;\n    combo = 0; comboTimer = 0; invuln = 1.5; shake = 0; paused = false;\n    for (let i = 0; i < 4; i++) spawnOrb();\n    for (let i = 0; i < 2; i++) spawnHazard();\n  }\n  function startGame(){\n    if (state === 'playing') return;\n    if (state === 'over' || state === 'won') { if (overTimer > 0) return; }\n    reset();\n    setState('playing');\n    sfx.start();\n  }\n\n  function rand(a,b){ return a + Math.random()*(b-a); }\n  function dist(a,b){ return Math.hypot(a.x-b.x, a.y-b.y); }\n\n  function spawnOrb(){\n    let o, tries = 0;\n    do {\n      o = { x: rand(30, W-30), y: rand(50, H-30), r: 8, t: Math.random()*6, hue: rand(160, 300), big: Math.random() < 0.12 };\n      if (o.big) o.r = 12;\n      tries++;\n    } while (player && dist(o, player) < 80 && tries < 20);\n    orbs.push(o);\n  }\n  function spawnHazard(){\n    // spawn from an edge, away from the player\n    let x, y, tries = 0;\n    do {\n      const side = Math.floor(Math.random()*4);\n      if (side === 0) { x = rand(0,W); y = -20; }\n      else if (side === 1) { x = W+20; y = rand(0,H); }\n      else if (side === 2) { x = rand(0,W); y = H+20; }\n      else { x = -20; y = rand(0,H); }\n      tries++;\n    } while (player && Math.hypot(x-player.x, y-player.y) < 200 && tries < 20);\n    const speed = rand(90, 130) + level * 14;\n    const tx = rand(W*0.2, W*0.8), ty = rand(H*0.2, H*0.8);\n    const a = Math.atan2(ty - y, tx - x);\n    const homing = level >= 3 && Math.random() < Math.min(0.1 + level*0.04, 0.4);\n    hazards.push({ x, y, vx: Math.cos(a)*speed, vy: Math.sin(a)*speed, r: rand(11, 17), rot: 0, spin: rand(-4,4), homing, speed, entering: true });\n  }\n  function burst(x, y, hue, n, spd){\n    for (let i = 0; i < n; i++) {\n      const a = Math.random()*Math.PI*2, s = rand(spd*0.3, spd);\n      particles.push({ x, y, vx: Math.cos(a)*s, vy: Math.sin(a)*s, life: rand(0.4, 0.9), max: 0.9, hue });\n    }\n  }\n\n  // ---------- Update ----------\n  function update(dt){\n    if (overTimer > 0) overTimer -= dt;\n    // particles always animate\n    for (let i = particles.length-1; i >= 0; i--) {\n      const p = particles[i];\n      p.x += p.vx*dt; p.y += p.vy*dt; p.vx *= 0.96; p.vy *= 0.96; p.life -= dt;\n      if (p.life <= 0) particles.splice(i,1);\n    }\n    if (shake > 0) shake = Math.max(0, shake - dt*30);\n    if (state !== 'playing' || paused) return;\n\n    elapsed += dt;\n    const newLevel = 1 + Math.floor(elapsed / 15);\n    if (newLevel > level) { level = newLevel; sfx.level(); burst(W/2, 30, 50, 20, 200); }\n\n    // player movement\n    let dx = 0, dy = 0;\n    if (keys['arrowleft'] || keys['a'] || keys['q']) dx -= 1;\n    if (keys['arrowright'] || keys['d']) dx += 1;\n    if (keys['arrowup'] || keys['w'] || keys['z']) dy -= 1;\n    if (keys['arrowdown'] || keys['s']) dy += 1;\n    if (dx || dy) {\n      const l = Math.hypot(dx, dy);\n      player.x += dx/l * player.speed * dt;\n      player.y += dy/l * player.speed * dt;\n    } else if (mouse.down) {\n      const mx = mouse.x - player.x, my = mouse.y - player.y, l = Math.hypot(mx, my);\n      if (l > 3) {\n        const step = Math.min(l, player.speed * dt);\n        player.x += mx/l*step; player.y += my/l*step;\n      }\n    }\n    player.x = Math.max(player.r, Math.min(W - player.r, player.x));\n    player.y = Math.max(player.r, Math.min(H - player.r, player.y));\n    if (invuln > 0) invuln -= dt;\n\n    // combo decay\n    if (comboTimer > 0) { comboTimer -= dt; if (comboTimer <= 0) combo = 0; }\n\n    // orbs\n    for (let i = orbs.length-1; i >= 0; i--) {\n      const o = orbs[i];\n      o.t += dt*3;\n      if (dist(o, player) < o.r + player.r) {\n        combo++; comboTimer = 2;\n        const pts = (o.big ? 50 : 10) * Math.min(1 + Math.floor(combo/5), 4);\n        setScore(score + pts);\n        burst(o.x, o.y, o.hue, o.big ? 24 : 12, 180);\n        sfx.orb(combo);\n        orbs.splice(i,1);\n        spawnOrb();\n        if (score >= WIN_SCORE) {\n          best = Math.max(best, score);\n          setState('won'); overTimer = 0.8; sfx.win();\n          burst(player.x, player.y, 60, 60, 300);\n          return;\n        }\n      }\n    }\n\n    // hazard spawning: target count grows with time\n    const target = 2 + Math.floor(elapsed / 6);\n    spawnTimer -= dt;\n    if (hazards.length < Math.min(target, 28) && spawnTimer <= 0) {\n      spawnHazard();\n      spawnTimer = Math.max(0.4, 2 - level*0.15);\n    }\n\n    // hazards\n    for (const h of hazards) {\n      if (h.homing) {\n        const a = Math.atan2(player.y - h.y, player.x - h.x);\n        h.vx += Math.cos(a) * 60 * dt; h.vy += Math.sin(a) * 60 * dt;\n        const s = Math.hypot(h.vx, h.vy), max = h.speed * 0.9;\n        if (s > max) { h.vx *= max/s; h.vy *= max/s; }\n      }\n      h.x += h.vx*dt; h.y += h.vy*dt; h.rot += h.spin*dt;\n      if (h.entering) {\n        if (h.x > h.r && h.x < W-h.r && h.y > h.r && h.y < H-h.r) h.entering = false;\n      } else {\n        if (h.x < h.r) { h.x = h.r; h.vx = Math.abs(h.vx); }\n        if (h.x > W-h.r) { h.x = W-h.r; h.vx = -Math.abs(h.vx); }\n        if (h.y < h.r) { h.y = h.r; h.vy = Math.abs(h.vy); }\n        if (h.y > H-h.r) { h.y = H-h.r; h.vy = -Math.abs(h.vy); }\n      }\n      if (invuln <= 0 && dist(h, player) < h.r*0.8 + player.r) {\n        lives--; invuln = 1.6; shake = 12; combo = 0;\n        burst(player.x, player.y, 0, 30, 260);\n        sfx.hit();\n        if (lives <= 0) {\n          best = Math.max(best, score);\n          setState('over'); overTimer = 0.8;\n          setTimeout(sfx.over, 150);\n          return;\n        }\n      }\n    }\n  }\n\n  // ---------- Draw ----------\n  function glowCircle(x, y, r, color, blur){\n    ctx.save();\n    ctx.shadowColor = color; ctx.shadowBlur = blur;\n    ctx.fillStyle = color;\n    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2); ctx.fill();\n    ctx.restore();\n  }\n  function drawGrid(t){\n    ctx.save();\n    ctx.strokeStyle = 'rgba(60,120,200,0.07)'; ctx.lineWidth = 1;\n    const off = (t*10) % 40;\n    for (let x = -40 + off; x < W; x += 40) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }\n    for (let y = -40 + off; y < H; y += 40) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }\n    ctx.restore();\n  }\n  function drawHazard(h){\n    ctx.save();\n    ctx.translate(h.x, h.y); ctx.rotate(h.rot);\n    ctx.shadowColor = h.homing ? '#f0f' : '#f33'; ctx.shadowBlur = 15;\n    ctx.fillStyle = h.homing ? '#c2f' : '#e22';\n    ctx.beginPath();\n    const spikes = 8;\n    for (let i = 0; i < spikes*2; i++) {\n      const rr = i % 2 === 0 ? h.r : h.r*0.55;\n      const a = i * Math.PI / spikes;\n      ctx.lineTo(Math.cos(a)*rr, Math.sin(a)*rr);\n    }\n    ctx.closePath(); ctx.fill();\n    ctx.fillStyle = '#300';\n    ctx.beginPath(); ctx.arc(0,0,h.r*0.25,0,Math.PI*2); ctx.fill();\n    ctx.restore();\n  }\n  function centerText(txt, y, size, color, glow){\n    ctx.save();\n    ctx.font = `bold ${size}px system-ui,Segoe UI,Arial,sans-serif`;\n    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';\n    ctx.fillStyle = color;\n    if (glow) { ctx.shadowColor = glow; ctx.shadowBlur = 20; }\n    ctx.fillText(txt, W/2, y);\n    ctx.restore();\n  }\n\n  let menuOrbs = [];\n  for (let i = 0; i < 14; i++) menuOrbs.push({ x: rand(0,W), y: rand(0,H), vx: rand(-30,30), vy: rand(-30,30), hue: rand(160,300), t: Math.random()*6 });\n\n  function draw(t){\n    ctx.clearRect(0,0,W,H);\n    ctx.save();\n    if (shake > 0) ctx.translate(rand(-shake,shake), rand(-shake,shake));\n    drawGrid(t);\n\n    if (state === 'menu') {\n      for (const o of menuOrbs) {\n        o.x = (o.x + o.vx/60 + W) % W; o.y = (o.y + o.vy/60 + H) % H; o.t += 0.05;\n        glowCircle(o.x, o.y, 7 + Math.sin(o.t)*2, `hsl(${o.hue},100%,65%)`, 20);\n      }\n    } else {\n      for (const o of orbs) {\n        const r = o.r + Math.sin(o.t)*2;\n        glowCircle(o.x, o.y, r, `hsl(${o.hue},100%,${o.big ? 75 : 62}%)`, o.big ? 35 : 22);\n        glowCircle(o.x, o.y, r*0.4, '#fff', 5);\n      }\n      for (const h of hazards) drawHazard(h);\n      if (state === 'playing' && !(invuln > 0 && Math.floor(invuln*10) % 2 === 0)) {\n        glowCircle(player.x, player.y, player.r, '#4ff', 25);\n        glowCircle(player.x, player.y, player.r*0.55, '#eff', 6);\n      }\n    }\n    for (const p of particles) {\n      ctx.globalAlpha = Math.max(0, p.life / p.max);\n      ctx.fillStyle = p.hue === 0 ? '#f55' : `hsl(${p.hue},100%,65%)`;\n      ctx.fillRect(p.x-2, p.y-2, 4, 4);\n    }\n    ctx.globalAlpha = 1;\n    ctx.restore();\n\n    // HUD\n    if (state === 'playing' || state === 'over' || state === 'won') {\n      ctx.save();\n      ctx.font = 'bold 20px system-ui,Arial,sans-serif';\n      ctx.fillStyle = '#dff'; ctx.textBaseline = 'top';\n      ctx.fillText('Score: ' + score + ' / ' + WIN_SCORE, 14, 12);\n      ctx.textAlign = 'center';\n      ctx.fillText('Level ' + level, W/2, 12);\n      ctx.textAlign = 'right';\n      ctx.fillText('Lives:', W - 14 - 3*22, 12);\n      for (let i = 0; i < 3; i++) {\n        ctx.globalAlpha = i < lives ? 1 : 0.2;\n        glowCircle(W - 14 - (2-i)*22 - 8, 23, 7, '#4ff', 10);\n      }\n      ctx.globalAlpha = 1;\n      if (combo >= 5 && state === 'playing') {\n        ctx.textAlign = 'left'; ctx.fillStyle = '#ff6';\n        ctx.fillText('Combo x' + Math.min(1 + Math.floor(combo/5), 4), 14, 38);\n      }\n      ctx.restore();\n    }\n\n    if (state === 'menu') {\n      ctx.fillStyle = 'rgba(0,0,10,0.45)'; ctx.fillRect(0,0,W,H);\n      centerText('ORB RUSH', 150, 72, '#6ff', '#0ff');\n      centerText('Collect glowing orbs. Avoid the red spikes.', 230, 20, '#cde');\n      centerText('Big orbs = 50 pts. Chain pickups quickly for a combo multiplier.', 262, 16, '#9bc');\n      centerText('Hazards multiply and speed up. Purple ones hunt you!', 290, 16, '#9bc');\n      centerText('Move: Arrow keys / WASD   or   hold mouse button to steer', 340, 17, '#dfe');\n      centerText('3 lives  \\u00b7  Reach ' + WIN_SCORE + ' points to win  \\u00b7  P pause  \\u00b7  M mute', 370, 15, '#9bc');\n      if (Math.floor(t*2) % 2 === 0) centerText('Press ENTER / SPACE or CLICK to start', 440, 24, '#ff6', '#fa0');\n      if (best) centerText('Best: ' + best, 490, 16, '#9bc');\n    } else if (state === 'over' || state === 'won') {\n      ctx.fillStyle = 'rgba(0,0,10,0.6)'; ctx.fillRect(0,0,W,H);\n      if (state === 'over') centerText('GAME OVER', 200, 64, '#f55', '#f00');\n      else centerText('YOU WIN!', 200, 64, '#6f6', '#0f0');\n      centerText('Score: ' + score, 270, 28, '#fff');\n      centerText('Best: ' + best + '   \\u00b7   Level reached: ' + level, 310, 18, '#9bc');\n      if (overTimer <= 0 && Math.floor(t*2) % 2 === 0) centerText('Press ENTER / SPACE or CLICK to play again', 390, 22, '#ff6', '#fa0');\n    } else if (paused) {\n      ctx.fillStyle = 'rgba(0,0,10,0.5)'; ctx.fillRect(0,0,W,H);\n      centerText('PAUSED', H/2 - 10, 50, '#6ff', '#0ff');\n      centerText('Press P to resume', H/2 + 40, 18, '#cde');\n    }\n    if (muted) { ctx.fillStyle = '#789'; ctx.font = '12px sans-serif'; ctx.textAlign = 'right'; ctx.fillText('muted', W-10, H-10); ctx.textAlign = 'left'; }\n  }\n\n  // ---------- Loop ----------\n  let last = performance.now();\n  function loop(now){\n    const dt = Math.min(0.05, (now - last) / 1000);\n    last = now;\n    update(dt);\n    draw(now / 1000);\n    requestAnimationFrame(loop);\n  }\n  reset(); setState('menu'); setScore(0);\n  requestAnimationFrame(loop);\n})();\n</script>\n</body>\n</html>\n```",
+ "ttft_ms": 8051,
+ "type": "result",
+ "duration_ms": 66677,
+ "uuid": "7ad1b7c2-7f8c-4711-8eb3-a932dad2e7b2",
+ "ttft_stream_ms": 5985,
+ "time_to_request_ms": 1774,
+ "first_content_frame_ms": 5986,
+ "queued_turn_count": 0,
+ "result_index": 0,
+ "credential_expires_at": "2026-12-12T04:36:10.496Z",
+ "_wall_seconds": 75.37603425979614
+}

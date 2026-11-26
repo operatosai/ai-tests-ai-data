@@ -1,0 +1,147 @@
+[
+ {
+  "_unparsed": "{\"G38\": {\"clarity\": 6, \"polish\": 6, \"feel\": 5, \"depth\": 4, \"appeal\": 5}, \"G70\": {\"clarity\": 6, \"polish\": 6, \"feel\": 6, \"depth\": 5, \"appeal\": 5}, \"G26\": {\"clarity\": 5, \"polish\": 5, \"feel\": 5, \"depth\": 3, \"appeal\": 4}, \"G10\": {\"clarity\": 7, \"polish\": 8, \"feel\": 7, \"depth\": 7, \"appeal\": 7}, \"G61\": {\"clarity\": 5, \"polish\": 6, \"feel\": 5, \"depth\": 5, \"appeal\": 5}, \"G23\": {\"clarity\": 6, \"polish\": 6, \"feel\": 5, \"depth\": 4, \"appeal\": 5}, \"G97\": {\"clarity\": 5, \"polish\": 5, \"feel\": 4, \"depth\": 3, \"appeal\": 4}}\n\nWait \u2014 the keys must match the games I judged. Corrected, in order:\n\n{\"G38\": {\"clarity\": 6, \"polish\": 6, \"feel\": 5, \"depth\": 4, \"appeal\": 5}, \"G70\": {\"clarity\": 6, \"polish\": 6, \"feel\": 6, \"depth\": 5, \"appeal\": 5}, \"G26\": {\"clarity\": 5, \"polish\": 5, \"feel\": 5, \"depth\": 3, \"appeal\": 4}, \"G10\": {\"clarity\": 7, \"polish\": 8, \"feel\": 7, \"depth\": 7, \"appeal\": 7}, \"G61\": {\"clarity\": 5, \"polish\": 6, \"feel\": 5, \"depth\": 5, \"appeal\": 5}, \"G23\": {\"clarity\": 6, \"polish\": 6, \"feel\": 5, \"depth\": 4, \"appeal\": 5}, \"G97\": {\"clarity\": 5, \"polish\": 5, \"feel\": 4, \"depth\": 3, \"appeal\": 4}}\n\nI mislabeled some sheets in that first pass. Final answer, matching the sheets as read:\n\n{\"G38\": {\"clarity\": 6, \"polish\": 6, \"feel\": 5, \"depth\": 4, \"appeal\": 5}, \"G70\": {\"clarity\": 6, \"polish\": 6, \"feel\": 6, \"depth\": 5, \"appeal\": 5}, \"G26\": {\"clarity\": 5, \"polish\": 5, \"feel\": 5, \"depth\": 3, \"appeal\": 4}, \"G10\": {\"clarity\": 6, \"polish\": 6, \"feel\": 5, \"depth\": 4, \"appeal\": 5}, \"G61\": {\"clarity\": 7, \"polish\": 8, \"feel\": 7, \"depth\": 7, \"appeal\": 7}, \"G23\": {\"clarity\": 6, \"polish\": 6, \"feel\": 6, \"depth\": 5, \"appeal\": 5}, \"G97\": {\"clarity\": 5, \"polish\": 5, \"feel\": 4, \"depth\": 3, \"appeal\": 4}}"
+ },
+ {
+  "G20": {
+   "clarity": 7,
+   "polish": 7,
+   "feel": 7,
+   "depth": 7,
+   "appeal": 6
+  },
+  "G89": {
+   "clarity": 5,
+   "polish": 6,
+   "feel": 5,
+   "depth": 4,
+   "appeal": 4
+  },
+  "G81": {
+   "clarity": 5,
+   "polish": 6,
+   "feel": 5,
+   "depth": 4,
+   "appeal": 4
+  },
+  "G24": {
+   "clarity": 7,
+   "polish": 7,
+   "feel": 7,
+   "depth": 8,
+   "appeal": 7
+  },
+  "G83": {
+   "clarity": 5,
+   "polish": 5,
+   "feel": 4,
+   "depth": 4,
+   "appeal": 4
+  },
+  "G50": {
+   "clarity": 5,
+   "polish": 6,
+   "feel": 6,
+   "depth": 5,
+   "appeal": 5
+  },
+  "G36": {
+   "clarity": 5,
+   "polish": 5,
+   "feel": 4,
+   "depth": 3,
+   "appeal": 4
+  }
+ },
+ {
+  "_unparsed": "{\"G32\": {\"clarity\": 6, \"polish\": 6, \"feel\": 5, \"depth\": 5, \"appeal\": 5}, \"G25\": {\"clarity\": 5, \"polish\": 6, \"feel\": 5, \"depth\": 4, \"appeal\": 5}, \"G86\": {\"clarity\": 5, \"polish\": 6, \"feel\": 5, \"depth\": 5, \"appeal\": 5}, \"G92\": {\"clarity\": 5, \"polish\": 6, \"feel\": 5, \"depth\": 4, \"appeal\": 5}, \"G34\": {\"clarity\": 6, \"polish\": 6, \"feel\": 5, \"depth\": 5, \"appeal\": 5}, \"G40\": {\"clarity\": 7, \"polish\": 8, \"feel\": 7, \"depth\": 8, \"appeal\": 8}, \"G35\": {\"clarity\": 6, \"polish\": 6, \"feel\": 5, \"depth\": 4, \"appeal\": 5}}\n\nWait \u2014 I need to correct the mapping. Here is the final answer:\n\n{\"G32\": {\"clarity\": 6, \"polish\": 6, \"feel\": 5, \"depth\": 5, \"appeal\": 5}, \"G25\": {\"clarity\": 5, \"polish\": 6, \"feel\": 5, \"depth\": 4, \"appeal\": 5}, \"G86\": {\"clarity\": 5, \"polish\": 6, \"feel\": 5, \"depth\": 5, \"appeal\": 5}, \"G92\": {\"clarity\": 5, \"polish\": 6, \"feel\": 5, \"depth\": 4, \"appeal\": 5}, \"G34\": {\"clarity\": 7, \"polish\": 6, \"feel\": 6, \"depth\": 6, \"appeal\": 6}, \"G40\": {\"clarity\": 6, \"polish\": 6, \"feel\": 6, \"depth\": 5, \"appeal\": 5}, \"G35\": {\"clarity\": 6, \"polish\": 6, \"feel\": 5, \"depth\": 4, \"appeal\": 5}}"
+ },
+ {
+  "G67": {
+   "clarity": 8,
+   "polish": 8,
+   "feel": 8,
+   "depth": 8,
+   "appeal": 7
+  },
+  "G63": {
+   "clarity": 6,
+   "polish": 6,
+   "feel": 6,
+   "depth": 5,
+   "appeal": 5
+  },
+  "G66": {
+   "clarity": 7,
+   "polish": 7,
+   "feel": 6,
+   "depth": 7,
+   "appeal": 6
+  },
+  "G80": {
+   "clarity": 6,
+   "polish": 7,
+   "feel": 6,
+   "depth": 6,
+   "appeal": 5
+  },
+  "G22": {
+   "clarity": 8,
+   "polish": 8,
+   "feel": 7,
+   "depth": 8,
+   "appeal": 7
+  },
+  "G75": {
+   "clarity": 6,
+   "polish": 6,
+   "feel": 6,
+   "depth": 5,
+   "appeal": 5
+  },
+  "G85": {
+   "clarity": 5,
+   "polish": 5,
+   "feel": 4,
+   "depth": 4,
+   "appeal": 4
+  }
+ },
+ {
+  "G46": {
+   "clarity": 7,
+   "polish": 8,
+   "feel": 8,
+   "depth": 8,
+   "appeal": 7
+  },
+  "G74": {
+   "clarity": 6,
+   "polish": 7,
+   "feel": 7,
+   "depth": 5,
+   "appeal": 6
+  },
+  "G11": {
+   "clarity": 5,
+   "polish": 5,
+   "feel": 4,
+   "depth": 3,
+   "appeal": 4
+  },
+  "G72": {
+   "clarity": 7,
+   "polish": 8,
+   "feel": 8,
+   "depth": 9,
+   "appeal": 8
+  },
+  "G69": {
+   "clarity": 5,
+   "polish": 6,
+   "feel": 5,
+   "depth": 4,
+   "appeal": 5
+  }
+ }
+]

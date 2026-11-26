@@ -1,0 +1,14 @@
+**Playtest notes**
+1. It loads, renders and shows no console errors. The `gameState` hook stays in sync, and menu → playing → over → restart all work.
+2. The menu explains controls, spike types and golden orbs clearly. The HUD is readable in the screenshots.
+3. The random bot lost at about 27s with a score of 1, so the early game is fairly tough for a player who isn't paying attention.
+4. Spikes never leave. They bounce forever and pile up to 14 (see the end screenshot, with spikes clumped together). Late rounds become cluttered instead of cleanly harder.
+5. Missed orbs cost a life, and a hit costs another. With few lives, the game can end for reasons that feel unfair.
+6. Orb pickup is tight for mouse and touch play, because the hit radius is only the two radii added together.
+7. Spawn warnings (the "!" rings) and the shrinking orb timer rings are good readability touches.
+8. A win at 40 points looks hard to reach, but the combo-heal mechanic gives skilled players a real path.
+
+**Changes made**
+- Spikes now have a lifetime of about 18–28s. They pop in, shrink and burst away at the end, so the screen stays readable while spawn rate and speed keep rising.
+- Orb pickup radius is slightly more generous.
+- Hazard collision now scales with the spike's current size, so a spike that is appearing or fading is less deadly.

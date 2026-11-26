@@ -1,0 +1,103 @@
+{
+ "duration_api_ms": 8247,
+ "stop_reason": "end_turn",
+ "session_id": "dcc8b7f0-686b-484a-ac66-2764902cb6d9",
+ "total_cost_usd": 0.0019238,
+ "usage": {
+  "input_tokens": 2,
+  "cache_creation_input_tokens": 5473,
+  "cache_read_input_tokens": 0,
+  "output_tokens": 1658,
+  "output_tokens_details": {
+   "thinking_tokens": 1417
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 5473,
+   "ephemeral_5m_input_tokens": 0
+  },
+  "inference_geo": "global",
+  "iterations": [
+   {
+    "input_tokens": 2,
+    "output_tokens": 1658,
+    "cache_read_input_tokens": 0,
+    "cache_creation_input_tokens": 5473,
+    "cache_creation": {
+     "ephemeral_5m_input_tokens": 0,
+     "ephemeral_1h_input_tokens": 5473
+    },
+    "type": "message"
+   }
+  ],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "modelUsage": {
+  "claude-haiku-5-5": {
+   "inputTokens": 2,
+   "outputTokens": 1658,
+   "cacheReadInputTokens": 0,
+   "cacheCreationInputTokens": 5473,
+   "webSearchRequests": 0,
+   "costUSD": 0.0019238,
+   "contextWindow": 1000000,
+   "maxOutputTokens": 128000,
+   "thinkingTokens": 1417,
+   "cacheCreationEphemeral5mInputTokens": 0,
+   "cacheCreationEphemeral1hInputTokens": 5473,
+   "canonicalModel": "claude-haiku-5-5",
+   "provider": "firstParty",
+   "costBasis": "list"
+  }
+ },
+ "permission_denials": [],
+ "terminal_reason": "completed",
+ "fast_mode_state": "off",
+ "fast_mode_disabled_reason": "sdk_opt_in_required",
+ "subagent_stats": {
+  "spawned": 0,
+  "requested": {
+   "background": 0,
+   "foreground": 0,
+   "unset": 0
+  },
+  "started_in_background": 0,
+  "max_depth": 0,
+  "spawned_by_subagents": 0,
+  "completed": 0,
+  "failed": 0,
+  "killed": {
+   "parent": 0,
+   "user": 0,
+   "system": 0
+  },
+  "refused": {
+   "depth_limit": 0,
+   "concurrency_limit": 0,
+   "budget": 0
+  },
+  "by_type": {}
+ },
+ "safety_stops": 0,
+ "is_error": false,
+ "num_turns": 1,
+ "subtype": "success",
+ "api_error_status": null,
+ "result": "Added:\n- Level progress bar in the HUD\n- Heartbeat sound during the last life\n- Pulsing red danger vignette during the last life\n- \"Keep moving! Hunters incoming\" warning and chime when standing still\n- Purple homing hunter hazards summoned when standing still\n- Purple warning icon for incoming hunters\n- Purple ring around the player while standing still\n- +50 bonus for collecting all 6 orbs in an orb shower\n- Shower clear chime, burst effect, and popup\n- \"Showers cleared\" stat on the game-over screen\n- Extra hazards spawned while standing still\n- Hazards drift slowly behind the end screen\n\nRemoved:\n- None\n\nCOUNTS added=12 removed=0",
+ "ttft_ms": 7675,
+ "type": "result",
+ "duration_ms": 8456,
+ "uuid": "4a93b6db-3704-44d3-b7af-c9d18c9099ff",
+ "ttft_stream_ms": 919,
+ "time_to_request_ms": 218,
+ "first_content_frame_ms": 919,
+ "queued_turn_count": 0,
+ "result_index": 0,
+ "credential_expires_at": "2026-12-12T04:36:10.496Z",
+ "_wall_seconds": 9.326465368270874
+}

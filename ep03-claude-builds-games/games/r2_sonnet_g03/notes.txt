@@ -1,0 +1,14 @@
+**Playtest notes**
+- The game loads, starts, scores, can be lost and can be restarted. The report scored 8 of 8 with no console errors.
+- The menu is clear and the controls are explained. The HUD is readable.
+- The bot lost in about 6.6s. Hazards spawn aimed at the player and can appear right next to them, so some hits feel unfair.
+- Orbs expire silently. The only warning is a blink in the last 2 seconds, and a missed orb costs a life. A visible countdown ring would make that fair.
+- Collecting is steady but flat. Every orb is worth the same, so there is no risk and reward decision.
+- Hazards bounce forever and pile up to the cap of 14. Difficulty rises through speed, spawn rate and chasers, which works.
+- The strip under the HUD (y<80) is empty, and the background is a plain gradient with no sense of motion.
+- Changes I'm making:
+  - **Orb timer rings:** each orb shows how long it has left.
+  - **Hazard spawn distance:** hazards can no longer spawn close to the player.
+  - **Golden bonus orb:** it appears occasionally, is worth 3 points and is risky to chase. It expires without costing a life.
+  - **Extra-orb bug:** the extra orb every 5 points could be skipped by a +3 score jump, so I fixed how it triggers.
+  - **Starfield:** a drifting starfield behind the action.

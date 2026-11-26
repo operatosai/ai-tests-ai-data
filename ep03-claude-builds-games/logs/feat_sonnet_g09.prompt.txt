@@ -1,0 +1,21 @@
+Below is a unified diff between two consecutive versions of a small HTML arcade game. Read ONLY the diff. List the player-visible features/mechanics ADDED and REMOVED (plain text, one short line each; ignore refactors). Then answer with a final line exactly: COUNTS added=<int> removed=<int>
+
+--- 
++++ 
+@@ -204,5 +204,6 @@
+         burst(o.x, o.y, '#f55', 10); combo = 0;
+-        floatText('MISSED -♥', o.x, o.y, '#f66');
++        floatText('MISSED! +spike', o.x, o.y, '#f66');
+         spawnOrb();
+-        if (state === "playing") { lives--; shake = 6; beep(150, 0.3, 'sawtooth', 0.1, -60); if (lives <= 0) { endGame("over"); return; } }
++        queueHazard(0.9);
++        shake = 4; beep(150, 0.3, 'sawtooth', 0.08, -60);
+         continue;
+@@ -358,5 +359,5 @@
+       glowCircle(lx, 222, 8, '#5ff', 20);
+-      text('Collect cyan orbs. Missed orbs cost a life!', tx, 228, 18, '#cfe', 'left');
++      text('Collect cyan orbs. Missed orbs summon a spike!', tx, 228, 18, '#cfe', 'left');
+       ctx.save(); ctx.translate(lx, 262); ctx.rotate(0.3); spike(10, '#e22', '#f33'); ctx.restore();
+-      text('Avoid the red spikes', tx, 268, 18, '#fcc', 'left');
++      text('Avoid the red spikes (they cost a life)', tx, 268, 18, '#fcc', 'left');
+       ctx.save(); ctx.translate(lx, 302); ctx.rotate(0.3); spike(10, '#a3e', '#c6f'); ctx.restore();

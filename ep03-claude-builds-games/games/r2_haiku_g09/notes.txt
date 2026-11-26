@@ -1,0 +1,14 @@
+**Playtest notes**
+
+1. **Works:** the page loads with no console errors, and the menu → play → game over → restart loop runs without a reload. Score and the `window.gameState` hook update correctly.
+2. **Works:** the menu lists the controls and the three hazard types clearly, but nine lines of text sit above the start prompt, which is dense.
+3. **Broken:** chasers (orange) never leave the arena once spawned, so late runs fill with them and the field gets crowded.
+4. **Broken:** the edge warnings for chasers are nearly invisible. They spawn only 24 px off-screen, so the marker shows for less than half a second.
+5. **Missing:** the win screen never shows "NEW BEST", though the game-over screen does.
+6. **Readability:** the top HUD text sits over the playfield, and spinners pass behind "GOAL 50" in end.png.
+7. **Balance is unverified:** the bot's best was 11 points in 60 s, which says nothing about how long a human needs to reach 50. A plain orb is worth only 1 point, so the grind is long.
+8. **Idle test:** the stationary run never ended (`over: false`), so a passive player can survive the early game for a long time. The report doesn't say how long it lasted.
+9. **Early game:** end.png at 0:15 shows score 0 with no orbs collected and spinners already close, so the opening can feel like pure dodging when orbs are far away.
+10. **Frame rate:** `rAF_5s` of 52.5 is about 10 fps. This is probably headless throttling, but it should be checked in a real browser.
+
+**Changes in this version:** chasers now expire after 18 s with a fade-out, and they spawn 60 px off-screen so their edge warnings are visible during the approach. The win screen shows NEW BEST, and the test hook keeps the same `{score, state}` shape.

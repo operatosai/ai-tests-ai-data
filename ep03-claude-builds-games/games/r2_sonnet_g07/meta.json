@@ -1,0 +1,41 @@
+{
+ "model": "sonnet",
+ "gen": 7,
+ "seconds": 53.97825813293457,
+ "usage": {
+  "input_tokens": 4,
+  "cache_creation_input_tokens": 13463,
+  "cache_read_input_tokens": 12855,
+  "output_tokens": 10360,
+  "output_tokens_details": {
+   "thinking_tokens": 569
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 13463,
+   "ephemeral_5m_input_tokens": 0
+  },
+  "inference_geo": "global",
+  "iterations": [
+   {
+    "input_tokens": 2,
+    "output_tokens": 10068,
+    "cache_read_input_tokens": 11784,
+    "cache_creation_input_tokens": 2750,
+    "cache_creation": {
+     "ephemeral_5m_input_tokens": 0,
+     "ephemeral_1h_input_tokens": 2750
+    },
+    "type": "message"
+   }
+  ],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "has_html": true,
+ "based_on": "r2_sonnet_g06"
+}

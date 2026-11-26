@@ -1,0 +1,103 @@
+{
+ "duration_api_ms": 27468,
+ "stop_reason": "end_turn",
+ "session_id": "b813bf7d-5585-4441-833d-fa152c1bf369",
+ "total_cost_usd": 0.049339499999999994,
+ "usage": {
+  "input_tokens": 2,
+  "cache_creation_input_tokens": 0,
+  "cache_read_input_tokens": 855,
+  "output_tokens": 4925,
+  "output_tokens_details": {
+   "thinking_tokens": 0
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 0,
+   "ephemeral_5m_input_tokens": 0
+  },
+  "inference_geo": "global",
+  "iterations": [
+   {
+    "input_tokens": 2,
+    "output_tokens": 4925,
+    "cache_read_input_tokens": 855,
+    "cache_creation_input_tokens": 0,
+    "cache_creation": {
+     "ephemeral_5m_input_tokens": 0,
+     "ephemeral_1h_input_tokens": 0
+    },
+    "type": "message"
+   }
+  ],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "modelUsage": {
+  "claude-sonnet-5-5": {
+   "inputTokens": 2,
+   "outputTokens": 4925,
+   "cacheReadInputTokens": 855,
+   "cacheCreationInputTokens": 0,
+   "webSearchRequests": 0,
+   "costUSD": 0.049339499999999994,
+   "contextWindow": 1000000,
+   "maxOutputTokens": 128000,
+   "thinkingTokens": 0,
+   "cacheCreationEphemeral5mInputTokens": 0,
+   "cacheCreationEphemeral1hInputTokens": 0,
+   "canonicalModel": "claude-sonnet-5-5",
+   "provider": "firstParty",
+   "costBasis": "list"
+  }
+ },
+ "permission_denials": [],
+ "terminal_reason": "completed",
+ "fast_mode_state": "off",
+ "fast_mode_disabled_reason": "sdk_opt_in_required",
+ "subagent_stats": {
+  "spawned": 0,
+  "requested": {
+   "background": 0,
+   "foreground": 0,
+   "unset": 0
+  },
+  "started_in_background": 0,
+  "max_depth": 0,
+  "spawned_by_subagents": 0,
+  "completed": 0,
+  "failed": 0,
+  "killed": {
+   "parent": 0,
+   "user": 0,
+   "system": 0
+  },
+  "refused": {
+   "depth_limit": 0,
+   "concurrency_limit": 0,
+   "budget": 0
+  },
+  "by_type": {}
+ },
+ "safety_stops": 0,
+ "is_error": false,
+ "num_turns": 1,
+ "subtype": "success",
+ "api_error_status": null,
+ "result": "Here's a complete game, \"Orb Runner\": move with the mouse or WASD/arrow keys, collect glowing orbs, and dodge red hazards. Hazards get faster and more numerous over time. Reach 100 points to win; touching a hazard ends the run. Press Space/Enter or click to start and restart.\n\n```html\n<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<title>Orb Runner</title>\n<style>\n  html,body{margin:0;height:100%;background:#05060f;display:flex;align-items:center;justify-content:center;overflow:hidden}\n  canvas{background:radial-gradient(circle at 50% 40%,#101436,#05060f);border:2px solid #2a3170;box-shadow:0 0 30px #2a3170;max-width:100vw;max-height:100vh}\n</style>\n</head>\n<body>\n<canvas id=\"c\" width=\"800\" height=\"560\"></canvas>\n<script>\n(function(){\n  const cv = document.getElementById('c'), ctx = cv.getContext('2d');\n  const W = cv.width, H = cv.height;\n  const WIN_SCORE = 100;\n  window.gameState = { score: 0, state: \"menu\" };\n\n  let state = \"menu\", score = 0, time = 0, lives = 3;\n  let player, orbs, hazards, particles, keys = {}, mouse = null, spawnT = 0, invuln = 0, last = 0;\n\n  // ---- Sound (generated) ----\n  let actx = null;\n  function beep(freq, dur, type, vol, slide) {\n    try {\n      if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();\n      const o = actx.createOscillator(), g = actx.createGain();\n      o.type = type || 'sine';\n      o.frequency.setValueAtTime(freq, actx.currentTime);\n      if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(30, freq + slide), actx.currentTime + dur);\n      g.gain.setValueAtTime(vol || 0.1, actx.currentTime);\n      g.gain.exponentialRampToValueAtTime(0.0001, actx.currentTime + dur);\n      o.connect(g); g.connect(actx.destination);\n      o.start(); o.stop(actx.currentTime + dur);\n    } catch (e) {}\n  }\n\n  function sync() { window.gameState = { score: score, state: state }; }\n\n  function reset() {\n    player = { x: W / 2, y: H / 2, r: 12 };\n    orbs = []; hazards = []; particles = [];\n    score = 0; time = 0; lives = 3; spawnT = 0; invuln = 0;\n    for (let i = 0; i < 3; i++) addOrb();\n    for (let i = 0; i < 3; i++) addHazard();\n  }\n\n  function addOrb() {\n    let x, y, tries = 0;\n    do {\n      x = 30 + Math.random() * (W - 60);\n      y = 70 + Math.random() * (H - 100);\n      tries++;\n    } while (tries < 20 && Math.hypot(x - player.x, y - player.y) < 80);\n    orbs.push({ x, y, r: 9, ph: Math.random() * 6.28 });\n  }\n\n  function addHazard() {\n    const diff = 1 + time / 20;\n    const speed = (60 + Math.random() * 40) * Math.min(diff, 4);\n    let x, y;\n    const side = Math.floor(Math.random() * 4);\n    if (side === 0) { x = -20; y = Math.random() * H; }\n    else if (side === 1) { x = W + 20; y = Math.random() * H; }\n    else if (side === 2) { x = Math.random() * W; y = -20; }\n    else { x = Math.random() * W; y = H + 20; }\n    // aim roughly toward the player's area with some randomness\n    const tx = player.x + (Math.random() - 0.5) * 300, ty = player.y + (Math.random() - 0.5) * 300;\n    const a = Math.atan2(ty - y, tx - x);\n    hazards.push({ x, y, vx: Math.cos(a) * speed, vy: Math.sin(a) * speed, r: 11 + Math.random() * 8, rot: 0 });\n  }\n\n  function burst(x, y, color, n) {\n    for (let i = 0; i < n; i++) {\n      const a = Math.random() * 6.28, s = 40 + Math.random() * 160;\n      particles.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: 0.6, color });\n    }\n  }\n\n  function start() {\n    reset();\n    state = \"playing\";\n    sync();\n    beep(440, 0.15, 'square', 0.06, 440);\n  }\n\n  function endGame(won) {\n    state = won ? \"won\" : \"over\";\n    sync();\n    if (won) { beep(523, 0.2, 'triangle', 0.1, 500); }\n    else { beep(300, 0.5, 'sawtooth', 0.1, -250); }\n  }\n\n  function update(dt) {\n    time += dt;\n    // movement\n    const sp = 280;\n    let dx = 0, dy = 0;\n    if (keys['arrowleft'] || keys['a']) dx -= 1;\n    if (keys['arrowright'] || keys['d']) dx += 1;\n    if (keys['arrowup'] || keys['w']) dy -= 1;\n    if (keys['arrowdown'] || keys['s']) dy += 1;\n    if (dx || dy) {\n      const l = Math.hypot(dx, dy);\n      player.x += dx / l * sp * dt; player.y += dy / l * sp * dt;\n      mouse = null;\n    } else if (mouse) {\n      const mx = mouse.x - player.x, my = mouse.y - player.y, d = Math.hypot(mx, my);\n      if (d > 4) {\n        const step = Math.min(d, 420 * dt);\n        player.x += mx / d * step; player.y += my / d * step;\n      }\n    }\n    player.x = Math.max(player.r, Math.min(W - player.r, player.x));\n    player.y = Math.max(player.r, Math.min(H - player.r, player.y));\n    if (invuln > 0) invuln -= dt;\n\n    // difficulty: spawn more hazards over time\n    spawnT += dt;\n    const interval = Math.max(0.9, 4 - time * 0.04);\n    if (spawnT > interval) { spawnT = 0; addHazard(); }\n    const maxHaz = Math.min(30, 3 + Math.floor(time / 6));\n    while (hazards.length < Math.min(maxHaz, 3)) addHazard();\n\n    for (const h of hazards) {\n      h.x += h.vx * dt; h.y += h.vy * dt; h.rot += dt * 3;\n      // bounce off walls\n      if (h.x < h.r && h.vx < 0 || h.x > W - h.r && h.vx > 0) { if (h.x > 0 && h.x < W) h.vx *= -1; }\n      if (h.y < h.r && h.vy < 0 || h.y > H - h.r && h.vy > 0) { if (h.y > 0 && h.y < H) h.vy *= -1; }\n    }\n    // remove hazards far offscreen\n    hazards = hazards.filter(h => h.x > -80 && h.x < W + 80 && h.y > -80 && h.y < H + 80);\n    if (hazards.length > maxHaz) hazards.length = maxHaz;\n\n    // orb collection\n    for (let i = orbs.length - 1; i >= 0; i--) {\n      const o = orbs[i];\n      if (Math.hypot(o.x - player.x, o.y - player.y) < o.r + player.r) {\n        orbs.splice(i, 1);\n        score += 10;\n        burst(o.x, o.y, '#7dffb2', 14);\n        beep(660 + Math.min(score, 400), 0.12, 'sine', 0.1, 300);\n        addOrb();\n        sync();\n        if (score >= WIN_SCORE) { endGame(true); return; }\n      }\n    }\n    // hazards collision\n    if (invuln <= 0) {\n      for (const h of hazards) {\n        if (Math.hypot(h.x - player.x, h.y - player.y) < h.r + player.r - 3) {\n          lives--;\n          burst(player.x, player.y, '#ff4a6a', 24);\n          invuln = 1.5;\n          if (lives <= 0) { endGame(false); return; }\n          beep(200, 0.25, 'sawtooth', 0.1, -100);\n          break;\n        }\n      }\n    }\n    for (const p of particles) { p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt; }\n    particles = particles.filter(p => p.life > 0);\n  }\n\n  function glowCircle(x, y, r, color, blur) {\n    ctx.shadowColor = color; ctx.shadowBlur = blur;\n    ctx.fillStyle = color;\n    ctx.beginPath(); ctx.arc(x, y, r, 0, 6.283); ctx.fill();\n    ctx.shadowBlur = 0;\n  }\n\n  function text(str, x, y, size, color, align) {\n    ctx.font = 'bold ' + size + 'px monospace';\n    ctx.fillStyle = color || '#fff';\n    ctx.textAlign = align || 'center';\n    ctx.fillText(str, x, y);\n  }\n\n  function draw() {\n    ctx.clearRect(0, 0, W, H);\n    if (state === \"menu\") {\n      ctx.shadowColor = '#7dffb2'; ctx.shadowBlur = 20;\n      text('ORB RUNNER', W / 2, 190, 64, '#7dffb2');\n      ctx.shadowBlur = 0;\n      text('Collect glowing orbs. Avoid the red hazards.', W / 2, 250, 20, '#cfd6ff');\n      text('Move: Mouse  or  WASD / Arrow keys', W / 2, 300, 20, '#cfd6ff');\n      text('Reach ' + WIN_SCORE + ' points to win. You have 3 lives.', W / 2, 330, 20, '#cfd6ff');\n      text('It gets faster and more dangerous over time!', W / 2, 360, 20, '#ffb86b');\n      if (Math.floor(performance.now() / 500) % 2) text('Press SPACE / ENTER or CLICK to start', W / 2, 440, 24, '#ffffff');\n      return;\n    }\n    // orbs\n    const t = performance.now() / 300;\n    for (const o of orbs) {\n      glowCircle(o.x, o.y, o.r + Math.sin(t + o.ph) * 2, '#7dffb2', 25);\n      glowCircle(o.x, o.y, 3, '#ffffff', 0);\n    }\n    // hazards\n    for (const h of hazards) {\n      ctx.save(); ctx.translate(h.x, h.y); ctx.rotate(h.rot);\n      ctx.shadowColor = '#ff2a4a'; ctx.shadowBlur = 18;\n      ctx.fillStyle = '#ff3355';\n      ctx.beginPath();\n      for (let i = 0; i < 8; i++) {\n        const a = i * Math.PI / 4, rr = i % 2 ? h.r * 0.55 : h.r;\n        ctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr);\n      }\n      ctx.closePath(); ctx.fill();\n      ctx.restore();\n    }\n    ctx.shadowBlur = 0;\n    // player\n    if (!(invuln > 0 && Math.floor(invuln * 10) % 2)) glowCircle(player.x, player.y, player.r, '#6ab7ff', 22);\n    // particles\n    for (const p of particles) {\n      ctx.globalAlpha = Math.max(0, p.life / 0.6);\n      ctx.fillStyle = p.color;\n      ctx.fillRect(p.x - 2, p.y - 2, 4, 4);\n    }\n    ctx.globalAlpha = 1;\n    // HUD\n    text('Score: ' + score, 16, 34, 24, '#ffffff', 'left');\n    text('Lives: ' + '\u2665'.repeat(Math.max(0, lives)), W - 16, 34, 24, '#ff6b8a', 'right');\n    text('Level ' + (1 + Math.floor(time / 10)), W / 2, 34, 18, '#ffb86b');\n\n    if (state === \"over\" || state === \"won\") {\n      ctx.fillStyle = 'rgba(5,6,15,0.75)'; ctx.fillRect(0, 0, W, H);\n      if (state === \"won\") {\n        text('YOU WIN!', W / 2, 230, 60, '#7dffb2');\n      } else {\n        text('GAME OVER', W / 2, 230, 60, '#ff4a6a');\n      }\n      text('Final score: ' + score, W / 2, 290, 28, '#ffffff');\n      text('Press SPACE / ENTER or CLICK to play again', W / 2, 350, 22, '#cfd6ff');\n    }\n  }\n\n  function loop(ts) {\n    const dt = Math.min(0.05, (ts - last) / 1000 || 0);\n    last = ts;\n    if (state === \"playing\") update(dt);\n    draw();\n    requestAnimationFrame(loop);\n  }\n\n  function tryStart() { if (state !== \"playing\") start(); }\n\n  window.addEventListener('keydown', e => {\n    const k = e.key.toLowerCase();\n    keys[k] = true;\n    if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(k)) e.preventDefault();\n    if (k === ' ' || k === 'enter') tryStart();\n  });\n  window.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });\n  cv.addEventListener('mousemove', e => {\n    const r = cv.getBoundingClientRect();\n    mouse = { x: (e.clientX - r.left) * W / r.width, y: (e.clientY - r.top) * H / r.height };\n  });\n  cv.addEventListener('mousedown', () => { tryStart(); });\n\n  sync();\n  requestAnimationFrame(loop);\n})();\n</script>\n</body>\n</html>\n```",
+ "ttft_ms": 29041,
+ "type": "result",
+ "duration_ms": 29290,
+ "uuid": "3ab0074b-e430-4263-aac4-d4eee7bf2f04",
+ "ttft_stream_ms": 2435,
+ "time_to_request_ms": 1762,
+ "first_content_frame_ms": 2444,
+ "queued_turn_count": 0,
+ "result_index": 0,
+ "credential_expires_at": "2026-12-12T04:36:10.496Z",
+ "_wall_seconds": 37.016735553741455
+}

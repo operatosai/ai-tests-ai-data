@@ -1,0 +1,103 @@
+{
+ "duration_api_ms": 5445,
+ "stop_reason": "end_turn",
+ "session_id": "640016a6-23a6-4f7c-b19f-126f860f13aa",
+ "total_cost_usd": 0.0009433,
+ "usage": {
+  "input_tokens": 2,
+  "cache_creation_input_tokens": 2163,
+  "cache_read_input_tokens": 0,
+  "output_tokens": 1021,
+  "output_tokens_details": {
+   "thinking_tokens": 775
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 2163,
+   "ephemeral_5m_input_tokens": 0
+  },
+  "inference_geo": "global",
+  "iterations": [
+   {
+    "input_tokens": 2,
+    "output_tokens": 1021,
+    "cache_read_input_tokens": 0,
+    "cache_creation_input_tokens": 2163,
+    "cache_creation": {
+     "ephemeral_5m_input_tokens": 0,
+     "ephemeral_1h_input_tokens": 2163
+    },
+    "type": "message"
+   }
+  ],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "modelUsage": {
+  "claude-haiku-5-5": {
+   "inputTokens": 2,
+   "outputTokens": 1021,
+   "cacheReadInputTokens": 0,
+   "cacheCreationInputTokens": 2163,
+   "webSearchRequests": 0,
+   "costUSD": 0.0009433,
+   "contextWindow": 1000000,
+   "maxOutputTokens": 128000,
+   "thinkingTokens": 775,
+   "cacheCreationEphemeral5mInputTokens": 0,
+   "cacheCreationEphemeral1hInputTokens": 2163,
+   "canonicalModel": "claude-haiku-5-5",
+   "provider": "firstParty",
+   "costBasis": "list"
+  }
+ },
+ "permission_denials": [],
+ "terminal_reason": "completed",
+ "fast_mode_state": "off",
+ "fast_mode_disabled_reason": "sdk_opt_in_required",
+ "subagent_stats": {
+  "spawned": 0,
+  "requested": {
+   "background": 0,
+   "foreground": 0,
+   "unset": 0
+  },
+  "started_in_background": 0,
+  "max_depth": 0,
+  "spawned_by_subagents": 0,
+  "completed": 0,
+  "failed": 0,
+  "killed": {
+   "parent": 0,
+   "user": 0,
+   "system": 0
+  },
+  "refused": {
+   "depth_limit": 0,
+   "concurrency_limit": 0,
+   "budget": 0
+  },
+  "by_type": {}
+ },
+ "safety_stops": 0,
+ "is_error": false,
+ "num_turns": 1,
+ "subtype": "success",
+ "api_error_status": null,
+ "result": "No features or mechanics were added or removed. The diff only changes tuning values and HUD layout:\n\n- Starting lives went from 3 to 4.\n- Regular orbs last 12 seconds instead of 10.\n- The early-game orb lifetime bonus applies until 25 seconds instead of 20.\n- Opening hazards: 2 queued at 1.5s and 2.7s, instead of 3 at 0.3s, 0.7s, and 1.1s.\n- Hazard spawn interval starts at 3.6s instead of 3.2s, with a 0.8s floor instead of 0.7s.\n- HUD: the lives row moved up slightly, and the dash cooldown bar and its label moved down.\n\nCOUNTS added=0 removed=0",
+ "ttft_ms": 4686,
+ "type": "result",
+ "duration_ms": 5594,
+ "uuid": "a746a988-1bbc-470c-b65d-d8ad82bb5b04",
+ "ttft_stream_ms": 813,
+ "time_to_request_ms": 144,
+ "first_content_frame_ms": 814,
+ "queued_turn_count": 0,
+ "result_index": 0,
+ "credential_expires_at": "2026-12-12T04:36:10.496Z",
+ "_wall_seconds": 6.443331241607666
+}

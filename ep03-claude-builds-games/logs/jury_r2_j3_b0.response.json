@@ -1,0 +1,103 @@
+{
+ "duration_api_ms": 9596,
+ "stop_reason": "end_turn",
+ "session_id": "8c95f3f2-d388-45cf-933d-62aad49fd010",
+ "total_cost_usd": 0.0630246,
+ "usage": {
+  "input_tokens": 4,
+  "cache_creation_input_tokens": 11575,
+  "cache_read_input_tokens": 3166,
+  "output_tokens": 1640,
+  "output_tokens_details": {
+   "thinking_tokens": 0
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 11575,
+   "ephemeral_5m_input_tokens": 0
+  },
+  "inference_geo": "global",
+  "iterations": [
+   {
+    "input_tokens": 2,
+    "output_tokens": 965,
+    "cache_read_input_tokens": 2095,
+    "cache_creation_input_tokens": 10551,
+    "cache_creation": {
+     "ephemeral_5m_input_tokens": 0,
+     "ephemeral_1h_input_tokens": 10551
+    },
+    "type": "message"
+   }
+  ],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "modelUsage": {
+  "claude-sonnet-5-5": {
+   "inputTokens": 4,
+   "outputTokens": 1640,
+   "cacheReadInputTokens": 3166,
+   "cacheCreationInputTokens": 11575,
+   "webSearchRequests": 0,
+   "costUSD": 0.0630246,
+   "contextWindow": 1000000,
+   "maxOutputTokens": 128000,
+   "thinkingTokens": 0,
+   "cacheCreationEphemeral5mInputTokens": 0,
+   "cacheCreationEphemeral1hInputTokens": 11575,
+   "canonicalModel": "claude-sonnet-5-5",
+   "provider": "firstParty",
+   "costBasis": "list"
+  }
+ },
+ "permission_denials": [],
+ "terminal_reason": "completed",
+ "fast_mode_state": "off",
+ "fast_mode_disabled_reason": "sdk_opt_in_required",
+ "subagent_stats": {
+  "spawned": 0,
+  "requested": {
+   "background": 0,
+   "foreground": 0,
+   "unset": 0
+  },
+  "started_in_background": 0,
+  "max_depth": 0,
+  "spawned_by_subagents": 0,
+  "completed": 0,
+  "failed": 0,
+  "killed": {
+   "parent": 0,
+   "user": 0,
+   "system": 0
+  },
+  "refused": {
+   "depth_limit": 0,
+   "concurrency_limit": 0,
+   "budget": 0
+  },
+  "by_type": {}
+ },
+ "safety_stops": 0,
+ "is_error": false,
+ "num_turns": 8,
+ "subtype": "success",
+ "api_error_status": null,
+ "result": "{\"G38\": {\"clarity\": 6, \"polish\": 6, \"feel\": 5, \"depth\": 4, \"appeal\": 5}, \"G70\": {\"clarity\": 6, \"polish\": 6, \"feel\": 6, \"depth\": 5, \"appeal\": 5}, \"G26\": {\"clarity\": 5, \"polish\": 5, \"feel\": 5, \"depth\": 3, \"appeal\": 4}, \"G10\": {\"clarity\": 7, \"polish\": 8, \"feel\": 7, \"depth\": 7, \"appeal\": 7}, \"G61\": {\"clarity\": 5, \"polish\": 6, \"feel\": 5, \"depth\": 5, \"appeal\": 5}, \"G23\": {\"clarity\": 6, \"polish\": 6, \"feel\": 5, \"depth\": 4, \"appeal\": 5}, \"G97\": {\"clarity\": 5, \"polish\": 5, \"feel\": 4, \"depth\": 3, \"appeal\": 4}}\n\nWait \u2014 the keys must match the games I judged. Corrected, in order:\n\n{\"G38\": {\"clarity\": 6, \"polish\": 6, \"feel\": 5, \"depth\": 4, \"appeal\": 5}, \"G70\": {\"clarity\": 6, \"polish\": 6, \"feel\": 6, \"depth\": 5, \"appeal\": 5}, \"G26\": {\"clarity\": 5, \"polish\": 5, \"feel\": 5, \"depth\": 3, \"appeal\": 4}, \"G10\": {\"clarity\": 7, \"polish\": 8, \"feel\": 7, \"depth\": 7, \"appeal\": 7}, \"G61\": {\"clarity\": 5, \"polish\": 6, \"feel\": 5, \"depth\": 5, \"appeal\": 5}, \"G23\": {\"clarity\": 6, \"polish\": 6, \"feel\": 5, \"depth\": 4, \"appeal\": 5}, \"G97\": {\"clarity\": 5, \"polish\": 5, \"feel\": 4, \"depth\": 3, \"appeal\": 4}}\n\nI mislabeled some sheets in that first pass. Final answer, matching the sheets as read:\n\n{\"G38\": {\"clarity\": 6, \"polish\": 6, \"feel\": 5, \"depth\": 4, \"appeal\": 5}, \"G70\": {\"clarity\": 6, \"polish\": 6, \"feel\": 6, \"depth\": 5, \"appeal\": 5}, \"G26\": {\"clarity\": 5, \"polish\": 5, \"feel\": 5, \"depth\": 3, \"appeal\": 4}, \"G10\": {\"clarity\": 6, \"polish\": 6, \"feel\": 5, \"depth\": 4, \"appeal\": 5}, \"G61\": {\"clarity\": 7, \"polish\": 8, \"feel\": 7, \"depth\": 7, \"appeal\": 7}, \"G23\": {\"clarity\": 6, \"polish\": 6, \"feel\": 6, \"depth\": 5, \"appeal\": 5}, \"G97\": {\"clarity\": 5, \"polish\": 5, \"feel\": 4, \"depth\": 3, \"appeal\": 4}}",
+ "ttft_ms": 1001,
+ "type": "result",
+ "duration_ms": 9735,
+ "uuid": "de216334-638d-4d41-bf4e-5db1d0740951",
+ "ttft_stream_ms": 616,
+ "time_to_request_ms": 113,
+ "first_content_frame_ms": 617,
+ "queued_turn_count": 0,
+ "result_index": 0,
+ "credential_expires_at": "2026-12-12T04:36:10.496Z",
+ "_wall_seconds": 10.80986213684082
+}

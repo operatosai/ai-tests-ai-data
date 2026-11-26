@@ -1,0 +1,13 @@
+**PLAYTEST NOTES**
+
+1. **Works:** The game loads with no console errors, the menu renders, the score moves, the player can lose, and restart works. The test hook stays in sync (8/8 points pass).
+2. **Works:** The HUD (score, time, best, danger, goal bar) is readable. Orbs, spinners and chasers are clearly distinguishable.
+3. **Broken (minor):** When orb or hazard spawning can't find a free spot, it falls back to the last random try, which can place an orb or hazard on top of the player.
+4. **Unverified:** The bot only saw spinners and chasers. No screenshot shows a lime dasher, and the bot never reached the 20 s mark where they appear, so their telegraph and lunge are untested.
+5. **Inconclusive:** The idle run reports `over: false, final: null`. It most likely never started, so it says nothing about whether a passive player survives.
+6. **Feels bad:** Game over just says "GAME OVER" with no reason, so the player doesn't learn what killed them.
+7. **Feels slow:** The best bot run scored 13 in 60 s. Scoring comes almost only from orbs, so reaching 50 can feel like a grind.
+8. **Feels dense:** The menu has about 15 lines of text, which is a lot to read before the first press.
+9. **Balance:** I have no playtest data on difficulty or pacing, so I left the numbers alone.
+
+**Changes in this version:** orbs and bouncers only spawn at a safe distance (skipped if no spot is found), and the game-over screen names what hit you. Nothing else is changed, and the test hook is still in sync.

@@ -1,0 +1,17 @@
+**Playtest notes**
+- The game loads and renders. The menu is clear and explains the controls. There are no console errors, and the `gameState` hook updates correctly.
+- Input, scoring, losing and restarting all work. The bot lost at about 23s with a score of 1.
+- The idle run never reached game over inside the test window. Idling is safe for a long time, because the only things that can hurt a passive player are orb expiry and the spikes bouncing around.
+- The early game is too harsh. Three orbs expire together and each costs a life. Spikes spawn aimed at the player, and the screenshot at level 2 already shows about 9 spikes.
+- The orb countdown ring is thin and hard to read. The screenshot shows only a tiny arc, so the "missed orb costs a life" rule feels unfair.
+- Mixing life loss on orb expiry with spike hits is an interesting idea, but the first 20 seconds give the player little time to learn it.
+- Dash, combo, the golden orb, chasers and the telegraphed spawn warnings are good additions. Pause and mute work.
+- The HUD is fine, but "SHIFT dash" sits right under the lives and dash bar and looks cramped.
+
+**Changes made**
+- Orbs last longer, and each orb's life is staggered so they don't all expire at once.
+- The countdown ring is thicker and brighter, and it turns red as the orb is about to expire.
+- The spike hitbox is a bit more forgiving.
+- Invulnerability after a hit is longer.
+- The hazard speed ramp is gentler early on.
+- The first hazard spawns later.

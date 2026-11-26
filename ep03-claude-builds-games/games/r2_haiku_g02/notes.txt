@@ -1,0 +1,8 @@
+Before I write the notes, here is what the screenshots and report show:
+
+- **Menu (menu.png):** Clear, readable, with the controls explained.
+- **Play (f01, f03):** Hazards, orbs, the trail and the HUD all render correctly.
+- **f05:** A hazard sits under the "SCORE 5" text, so the HUD is hard to read there.
+- **end.png:** It shows a fresh run at 0:04 with score 0, not a game-over screen. The game-over and win screens were never captured.
+
+Now I'll make the changes: pause when the window loses focus, click to resume from pause, a backing band behind the HUD, a near-miss bonus, and corrected menu text.

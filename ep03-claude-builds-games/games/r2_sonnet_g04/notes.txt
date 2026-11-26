@@ -1,0 +1,13 @@
+**Playtest notes**
+- The game loads and renders with no console errors. The `gameState` hook works, and the bot could score, lose and restart.
+- The player is yellow (#ffd84a) and golden orbs are also yellow. In the screenshots they are hard to tell apart, which is a real readability problem.
+- The bot died after about 6.6 s with a score of 3. Each missed orb costs a life and orbs expire after 7 s, so the first seconds are harsh.
+- Several hazards spawn at once early on. By level 1 there are 6 or more spikes on screen, and they are cluttered.
+- The menu explains the controls and orb types clearly, and it fits on screen.
+- The HUD is fine, but the dash bar sits in a cramped corner.
+- Pause, combos, extra lives, golden orbs and chaser spikes give good variety.
+- I didn't change the balance beyond the orb lifetime. The progression looks reasonable: it ramps up through speed and spawn rate, with chasers after 15 s.
+- Changes I made:
+  - The player is now white with a magenta glow and a ring, so it stands out from the gold orbs.
+  - Orb lifetime goes from 7 s to 10 s, which makes the early game fairer.
+  - The menu now shows the player icon.

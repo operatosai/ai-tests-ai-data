@@ -1,0 +1,41 @@
+{
+ "model": "haiku",
+ "gen": 10,
+ "seconds": 89.61736845970154,
+ "usage": {
+  "input_tokens": 4,
+  "cache_creation_input_tokens": 26195,
+  "cache_read_input_tokens": 21578,
+  "output_tokens": 25436,
+  "output_tokens_details": {
+   "thinking_tokens": 6313
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 26195,
+   "ephemeral_5m_input_tokens": 0
+  },
+  "inference_geo": "global",
+  "iterations": [
+   {
+    "input_tokens": 2,
+    "output_tokens": 24837,
+    "cache_read_input_tokens": 20507,
+    "cache_creation_input_tokens": 6759,
+    "cache_creation": {
+     "ephemeral_5m_input_tokens": 0,
+     "ephemeral_1h_input_tokens": 6759
+    },
+    "type": "message"
+   }
+  ],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "has_html": true,
+ "based_on": "r2_haiku_g09"
+}

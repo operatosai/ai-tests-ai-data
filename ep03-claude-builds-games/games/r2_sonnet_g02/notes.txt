@@ -1,0 +1,11 @@
+**Playtest notes**
+- It loads with no console errors, runs at about 60 fps, and the `gameState` hook is correct. All 8 checks pass.
+- The bot lost at about 17s and restarted fine, so the lose and restart loop works.
+- The idle run never reached game over. Standing still and ignoring orbs costs nothing, because orbs that expire have no penalty.
+- On the menu, the orb icon overlaps the "Collect glowing orbs" text. The purple spike icon also sits right against its caption.
+- Hazards and warning markers can spawn at y=50, under the HUD, and orbs can spawn there too. They are hard to read and unfair to reach.
+- Dash is only a speed burst, so it isn't useful for escaping. Giving it brief invulnerability would make it a real decision.
+- The warning rings and the red/purple spike colour coding are clear and work well.
+- Difficulty ramps through spawn rate, speed and chasers. That's good, but the first 20s are easy and the idle player isn't pressured.
+
+**Changes:** I fixed the menu layout and moved the spawn and orb areas below the HUD. Dash now gives invulnerability. A missed orb now costs a life, so idling loses. I also added a level-up flash and a floating "+1" on pickups.

@@ -1,0 +1,21 @@
+## Playtest notes
+
+1. **Works:** the game loads with no console errors, the hook is updated, input is picked up, score goes up, you can lose, and restart works. All 8 playtest checks pass, and the frame rate is steady (305 frames in 5 s).
+2. **Menu (menu.png):** it reads well, with a legend and clear controls. One flaw: the word "Shield" overlaps the shield icon's ring.
+3. **Hazards over the score bar (f05.png, end.png):** hazards bounce against the top edge, so they sit right on the score and lives text. The top bar has no dark backing, so it gets hard to read.
+4. **Too much empty time:** the random bot scored 10 points once in 36 s. Around 85% of its time was dead time. That's expected from a bot with random inputs, but it also shows the field is mostly empty early on and nothing pushes you to act.
+5. **Same threat all game:** hazards bounce forever, and difficulty only adds more of them and makes them faster. At level 5 the danger feels exactly like level 1, just busier. There is no second kind of threat.
+6. **Moves are too limited:** you can only steer. There is no way to get out of a tight spot or take a risk, so getting cornered feels unfair rather than like your mistake.
+7. **Field gets cluttered:** hazards never leave, so later the screen fills with them, and the "!" warnings stop meaning much because new hazards rarely arrive.
+8. **Small screens:** the canvas only shrinks by width. On short laptop screens the help line below it gets pushed off-screen.
+9. **No touch support:** it only listens to mouse events, so it can't be played on a phone or tablet.
+
+## What I changed
+- **Dash:** Space, Shift or right-click gives a short, fast dash with a cooldown, and you can't be hit during it. Dashing through a hazard gives +5 "DODGE". A ring around the player and a bar at the bottom left show when it's ready.
+- **Lasers from level 4:** a flashing dashed line warns you, then a beam fires across the screen near you. From level 7 they can come in crossed pairs.
+- **Hazards leave:** each hazard fades out after 16–26 s, so new ones keep arriving with their warning.
+- **Readability:** the top bar has a dark backing, the "Shield" label no longer overlaps its icon, and the canvas now shrinks to fit the screen height too.
+- **Touch:** input now uses pointer events, so it works on touch screens.
+- **Code:** I moved scoring and winning into one function (`addScore`) and taking damage into another (`hurt`). The test hook is unchanged.
+
+I haven't run the updated version yet. These changes still need a new playtest.

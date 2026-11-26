@@ -1,0 +1,53 @@
+Below is a unified diff between two consecutive versions of a small HTML arcade game. Read ONLY the diff. List the player-visible features/mechanics ADDED and REMOVED (plain text, one short line each; ignore refactors). Then answer with a final line exactly: COUNTS added=<int> removed=<int>
+
+--- 
++++ 
+@@ -51,2 +51,4 @@
+   const SAFE_HAZARD_DIST = 220; // minimum spawn distance from the player for bouncers/dashers
++  const DEATH_SLOW = 0.45;    // seconds of slow motion after a hit
++  const DEATH_SLOW_SCALE = 0.3; // time scale during that slow motion
+   const KILLER_NAME = { bouncer: 'a spinner', seeker: 'a chaser', dasher: 'a dasher' };
+@@ -65,2 +67,3 @@
+   let flash = 0;              // red screen flash after a hit
++  let slowT = 0;              // seconds of death slow motion left (visual only)
+   let grace = 0;              // seconds of invulnerability left
+@@ -129,2 +132,3 @@
+     gold: () => { tone(880, 0.1, 'triangle', 0.15); tone(1320, 0.15, 'triangle', 0.12, null, 0.08); },
++    mult: () => { tone(660, 0.1, 'triangle', 0.12); tone(990, 0.14, 'triangle', 0.12, null, 0.07); },
+     shield: () => [392, 523, 659, 784].forEach((f, i) => tone(f, 0.12, 'triangle', 0.12, null, i * 0.05)),
+@@ -263,2 +267,3 @@
+     flash = 0;
++    slowT = 0;
+     paused = false;
+@@ -297,2 +302,3 @@
+     flash = 1;
++    slowT = DEATH_SLOW;
+     burst(player.x, player.y, '255,80,120', 40, 320);
+@@ -356,3 +362,2 @@
+     elapsed += dt;
+-    shake = Math.max(0, shake - dt * 2);
+     if (grace > 0) grace = Math.max(0, grace - dt);
+@@ -417,2 +422,3 @@
+         } else {
++          const before = multiplier();
+           combo = comboT > 0 ? combo + 1 : 1;
+@@ -426,2 +432,8 @@
+           if (gold) sfx.gold(); else sfx.collect(combo);
++          // Reward tier change: announce the new multiplier
++          if (multiplier() > before) {
++            popups.push({ x: player.x, y: player.y - 34, text: `COMBO x${multiplier()}!`, life: 1.2, rgb: '255,210,60' });
++            burst(player.x, player.y, '255,210,60', 18, 220);
++            sfx.mult();
++          }
+         }
+@@ -973,4 +985,9 @@
+     if (state === 'over' || state === 'won') cooldown -= dt;
++
++    // Visual-only timers run here so they also settle on the game-over screen
++    const sdt = slowT > 0 ? dt * DEATH_SLOW_SCALE : dt;
++    if (slowT > 0) slowT = Math.max(0, slowT - dt);
++    shake = Math.max(0, shake - dt * 2);
+     flash = Math.max(0, flash - dt * 2.5);
+-    updateParticles(dt);
++    updateParticles(sdt);
+     updateStars(dt);

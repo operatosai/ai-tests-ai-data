@@ -1,0 +1,35 @@
+Below is a unified diff between two consecutive versions of a small HTML arcade game. Read ONLY the diff. List the player-visible features/mechanics ADDED and REMOVED (plain text, one short line each; ignore refactors). Then answer with a final line exactly: COUNTS added=<int> removed=<int>
+
+--- 
++++ 
+@@ -94,3 +94,3 @@
+     hazards.push({ x: p.x, y: p.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, sp, chaser: p.chaser,
+-      r: 12 + Math.random() * 8, rot: 0 });
++      r: 12 + Math.random() * 8, rot: 0, age: 0, life: 18 + Math.random() * 10, sc: 0 });
+   }
+@@ -209,3 +209,3 @@
+       }
+-      if (Math.hypot(o.x - player.x, o.y - player.y) < o.r + player.r) {
++      if (Math.hypot(o.x - player.x, o.y - player.y) < o.r + player.r + 6) {
+         orbs.splice(i, 1);
+@@ -228,2 +228,5 @@
+       const h = hazards[i];
++      h.age += dt;
++      if (h.age >= h.life) { burst(h.x, h.y, h.chaser ? '#c6f' : '#f55', 10); hazards.splice(i, 1); continue; }
++      h.sc = Math.min(1, h.age / 0.3, (h.life - h.age) / 1.5);
+       if (h.chaser) {
+@@ -237,3 +240,3 @@
+       if (h.y < TOP + h.r && h.vy < 0 || h.y > H - h.r && h.vy > 0) h.vy *= -1;
+-      if (invuln <= 0 && dash <= 0 && Math.hypot(h.x - player.x, h.y - player.y) < h.r * 0.8 + player.r * 0.75) {
++      if (invuln <= 0 && dash <= 0 && Math.hypot(h.x - player.x, h.y - player.y) < h.r * h.sc * 0.8 + player.r * 0.75) {
+         loseLife();
+@@ -318,5 +321,8 @@
+         ctx.save(); ctx.translate(h.x, h.y); ctx.rotate(h.rot);
+-        if (h.chaser) spike(h.r, '#a3e', '#c6f'); else spike(h.r, '#e22', '#f33');
++        ctx.globalAlpha = 0.4 + 0.6 * h.sc;
++        const rr = Math.max(0.5, h.r * h.sc);
++        if (h.chaser) spike(rr, '#a3e', '#c6f'); else spike(rr, '#e22', '#f33');
+         ctx.restore();
+       }
++      ctx.globalAlpha = 1;
+       ctx.shadowBlur = 0;

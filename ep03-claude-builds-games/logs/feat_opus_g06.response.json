@@ -1,0 +1,103 @@
+{
+ "duration_api_ms": 7779,
+ "stop_reason": "end_turn",
+ "session_id": "86881180-1819-4616-8b66-896a1cfaeae4",
+ "total_cost_usd": 0.0018787,
+ "usage": {
+  "input_tokens": 2,
+  "cache_creation_input_tokens": 5775,
+  "cache_read_input_tokens": 0,
+  "output_tokens": 1447,
+  "output_tokens_details": {
+   "thinking_tokens": 1227
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 5775,
+   "ephemeral_5m_input_tokens": 0
+  },
+  "inference_geo": "global",
+  "iterations": [
+   {
+    "input_tokens": 2,
+    "output_tokens": 1447,
+    "cache_read_input_tokens": 0,
+    "cache_creation_input_tokens": 5775,
+    "cache_creation": {
+     "ephemeral_5m_input_tokens": 0,
+     "ephemeral_1h_input_tokens": 5775
+    },
+    "type": "message"
+   }
+  ],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "modelUsage": {
+  "claude-haiku-5-5": {
+   "inputTokens": 2,
+   "outputTokens": 1447,
+   "cacheReadInputTokens": 0,
+   "cacheCreationInputTokens": 5775,
+   "webSearchRequests": 0,
+   "costUSD": 0.0018787,
+   "contextWindow": 1000000,
+   "maxOutputTokens": 128000,
+   "thinkingTokens": 1227,
+   "cacheCreationEphemeral5mInputTokens": 0,
+   "cacheCreationEphemeral1hInputTokens": 5775,
+   "canonicalModel": "claude-haiku-5-5",
+   "provider": "firstParty",
+   "costBasis": "list"
+  }
+ },
+ "permission_denials": [],
+ "terminal_reason": "completed",
+ "fast_mode_state": "off",
+ "fast_mode_disabled_reason": "sdk_opt_in_required",
+ "subagent_stats": {
+  "spawned": 0,
+  "requested": {
+   "background": 0,
+   "foreground": 0,
+   "unset": 0
+  },
+  "started_in_background": 0,
+  "max_depth": 0,
+  "spawned_by_subagents": 0,
+  "completed": 0,
+  "failed": 0,
+  "killed": {
+   "parent": 0,
+   "user": 0,
+   "system": 0
+  },
+  "refused": {
+   "depth_limit": 0,
+   "concurrency_limit": 0,
+   "budget": 0
+  },
+  "by_type": {}
+ },
+ "safety_stops": 0,
+ "is_error": false,
+ "num_turns": 1,
+ "subtype": "success",
+ "api_error_status": null,
+ "result": "ADDED:\n- Some hazards now aim straight at the player, with the chance rising by level (capped at 40%)\n- Standing still for over 2 seconds makes hazards target you; moving or dashing resets this\n- Magnet pull range and strength grow with the combo multiplier\n- New x4 FEVER multiplier tier, announced with its own popup and ring\n- Fever visuals: rainbow trail and pulsing pink aura around the player\n- Combo HUD and timer bar turn pink and read \"x4 FEVER!\" at x4\n- Controls hint shown for the first 5 seconds of play\n\nREMOVED: none\n\nCOUNTS added=7 removed=0",
+ "ttft_ms": 7068,
+ "type": "result",
+ "duration_ms": 7980,
+ "uuid": "f326e744-bd16-494f-b5fd-e51cc5abf7c4",
+ "ttft_stream_ms": 895,
+ "time_to_request_ms": 195,
+ "first_content_frame_ms": 896,
+ "queued_turn_count": 0,
+ "result_index": 0,
+ "credential_expires_at": "2026-12-12T04:36:10.496Z",
+ "_wall_seconds": 8.95103931427002
+}

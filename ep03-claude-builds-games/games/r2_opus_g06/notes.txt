@@ -1,0 +1,22 @@
+**Playtest notes**
+
+1. The bot scored all 8 of 8 checks. The game loads, starts, scores, can be lost (game over at about 35 s) and restarts. There were no console errors and it ran at a steady ~100 fps.
+2. Menu (menu.png): the title, the rules and the "Press ENTER / SPACE or CLICK" prompt are clear. The controls are explained on the canvas and again in a line under it.
+3. Menu bug: the icon row is crowded. The dart's trail runs over the purple hunter icon, and "Big +50" nearly touches the hazard icons. The positions were hard-coded, so the spacing doesn't follow the text width.
+4. Menu wording: the line "A ! warns of incoming hazards" reads like a typo, because the "!" is plain text and not the red warning sign the game shows.
+5. In play (f01, f03, f05): the HUD is readable (score/1000 with a progress bar, level, life icons, dash meter). Hazards, orbs and the ! warnings are easy to tell apart.
+6. The "GRAZE +2" pop-up (f03) is small and faint, and easy to miss in a busy moment.
+7. Standing still is too safe early on. Spike mines aim at random spots, never at the player, and before level 4 nothing targets you. The idle run never reached game over. Its screenshot (end.png) still shows 3 lives at level 1.
+8. When a new player starts there's no reminder of the controls. You land in the playfield, and the controls are only on the menu.
+9. Combos give more points but nothing else changes, so a x4 streak doesn't feel any different.
+10. The bot made 110 points in 35 s. A human chaining x4 combos should reach the 1000-point win, so I left that target alone.
+
+**Changes made**
+- **Menu icon row:** it is now measured and centred, so no icons overlap.
+- **Warning-sign rule:** the line now says "Red warning signs (!) mark incoming hazards".
+- **Anti-camping:** about 25–40% of spike mines now head straight at you. If you stand still for over 2 s, every new mine aims at you.
+- **Bigger combo reward:** the orb-pull radius now grows with the multiplier. At x4 the combo display shows "FEVER!" and your ball glows pink.
+- **Controls reminder:** for the first 5 seconds of each run, a fading line at the bottom shows the controls.
+- **Graze pop-up:** it is bigger and easier to see.
+
+The `window.gameState` test hook and everything else that worked are unchanged.

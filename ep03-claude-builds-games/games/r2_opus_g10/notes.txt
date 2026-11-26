@@ -1,0 +1,22 @@
+## Playtest notes
+
+1. **Everything passed.** The game loads, starts, reacts to input, scores, can be lost and restarts with no console errors. It ran at about 60 fps (302 frames in 5 s).
+2. **Menu (menu.png):** the legend draws a small icon for each thing in the game, and the controls are all explained. Nothing to fix.
+3. **During play (f01, f03, f05):** orbs, hazards and the player are easy to tell apart. The HUD (score bar, dash meter, level bar, lives) sits above the playing area, so it never covers anything.
+4. **Restart bug:** a held Space or Enter auto-repeats. If you were holding Space to dash when you died, the game restarted by itself as soon as the 0.8 s lock ended, so the game-over screen could flash past.
+5. **Hard early on:** the hazard target went up by one every 5 s from the start. By about 13 s there were 5 or 6 mines plus warnings, and the random bot died at 16.6 s with only 68 points. That's a steep start for a new player.
+6. **No reward along the way:** the only goal is the distant 1000-point win. A milestone halfway would help keep players going.
+7. **Restart only on Enter, Space or click:** no R key, which players expect.
+8. **Pause only on window blur:** switching browser tabs didn't always pause, so you could come back to a lost life.
+9. **Small things:** the "GRAZE +2" popup is dim and easy to miss on the dark background. In end.png the game had already been restarted, so the end screen doesn't show it.
+10. **Idle run:** it reported no game over and no final state. I can't tell from the report whether that run ever started a game.
+
+## Changes in this version
+
+- Holding a key no longer restarts the game, and R now restarts too (the on-screen hints mention it).
+- The early game is a bit easier: one extra hazard every 6 s instead of every 5 s. It gets harder later on as before.
+- Reaching 500 points gives a "HALFWAY!" bonus life if you've lost one (+25 points if your lives are full), with a sound and effect.
+- Switching tabs now pauses the game.
+- The graze popup is brighter.
+
+I haven't run the updated file. The test hook (`window.gameState`) works exactly as before.

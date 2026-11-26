@@ -1,0 +1,25 @@
+## Playtest notes
+
+1. **Works:** it loads with no console errors, the menu shows up, and keyboard and mouse both start the game. Score, game over and restart all work. The bot passed all 8 checks, scored in 17 distinct steps and died at about 53 s, so the difficulty curve does its job.
+2. **Idle run:** the game just sits on the menu, which is correct because nothing starts it. Once it is running, homing hazards and lasers aimed at the player make standing still a losing move. That's intended.
+3. **Screenshots:** the menu is clear and readable. The HUD (score/1000 bar, level, lives, combo, dash meter) is tidy. The game-over overlay keeps the field visible underneath, which reads well.
+4. **Boring start:** level 1 (f01) has only 2 hazards. For the first 15 seconds there's no real pressure, so a good player is just wandering around.
+5. **No visual sense of progress:** levels 1 to 3 (f01, f03, f05) look exactly the same. Only the number at the top changes.
+6. **Not enough variety:** the only hazards are bouncing mines, hunters (level 3) and lasers (level 4). After level 4 nothing new appears, it just gets denser.
+7. **Unfair hits:** after you lose a life, the mine that hit you is often still on top of you. You can lose a second life right after the invincibility runs out.
+8. **Weak combo feedback:** going from x1 to x2 (and so on) has no popup or sound of its own, even though the multiplier is the main way to score.
+9. **No touch dash:** you can steer by touch, but there is no way to dash. Mobile players lose the core skill move.
+10. **Small risk:** nothing limits the number of particles, so busy late levels with many explosions could slow down.
+
+## What I changed
+
+- **Busier start:** you begin with 3 hazards instead of 2, and new ones are added a bit faster.
+- **Colour per level:** the background grid changes colour each level, and level-ups send out a shockwave ring.
+- **New hazard from level 5, "darts":** fast orange arrows aimed where you are, shown first by a dashed orange line along their path. They fly straight across and leave the screen. You can graze them or dash through them.
+- **Shockwave when you get hit:** nearby hazards are pushed away, so you don't get trapped losing life after life.
+- **Combo feedback:** reaching x2, x3 or x4 shows a "MULTIPLIER" popup with its own sound and a ring.
+- **Touch dash:** double-tap, or tap with a second finger. The help text says so.
+- **Particle cap** to keep frame rate steady late in the game.
+- The `window.gameState` test hook is unchanged and updates everywhere it did before.
+
+I haven't run the updated file, so none of these changes have been playtested yet.

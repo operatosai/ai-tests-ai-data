@@ -1,0 +1,69 @@
+Below is a unified diff between two consecutive versions of a small HTML arcade game. Read ONLY the diff. List the player-visible features/mechanics ADDED and REMOVED (plain text, one short line each; ignore refactors). Then answer with a final line exactly: COUNTS added=<int> removed=<int>
+
+--- 
++++ 
+@@ -36,3 +36,4 @@
+   const CLOSE_RANGE = 18;     // extra distance that counts as a close call
+-  const CLOSE_BONUS = 2;      // points for a close call (once per pass of a hazard)
++  const CLOSE_BONUS = 2;      // points for a close call
++  const CLOSE_COOLDOWN = 1.5; // seconds before the same hazard can pay a close-call bonus again
+   const PLAYER_SPEED = 330;   // px/s
+@@ -196,2 +197,3 @@
+       near: false,             // true while the player is inside its close-call range
++      cool: 0,                 // seconds until this hazard can pay another close-call bonus
+       // dasher-only state: 'drift' -> 'wind' (telegraph) -> 'lunge' -> 'drift'
+@@ -384,2 +386,3 @@
+       h.age += dt;
++      if (h.cool > 0) h.cool = Math.max(0, h.cool - dt);
+       h.spin += dt * (h.type === 'seeker' ? 3 : 1.5) * h.dir;
+@@ -428,3 +431,4 @@
+     // Hazard collisions: shield smashes them, otherwise they are lethal once faded in.
+-    // Passing close (without touching) earns a near-miss bonus, once per pass of each hazard.
++    // Passing close (without touching) earns a near-miss bonus, at most once per
++    // CLOSE_COOLDOWN for each hazard so hovering beside one cannot farm points.
+     const reach = HAZARD_HIT + PLAYER_HIT;
+@@ -448,4 +452,5 @@
+         const near = d < reach + CLOSE_RANGE;
+-        if (near && !h.near && shieldT <= 0 && grace <= 0) {
++        if (near && !h.near && shieldT <= 0 && grace <= 0 && h.cool <= 0) {
+           score += CLOSE_BONUS;
++          h.cool = CLOSE_COOLDOWN;
+           popups.push({ x: player.x, y: player.y - 18, text: `CLOSE +${CLOSE_BONUS}`, life: 0.8, rgb: '255,255,255' });
+@@ -584,2 +589,26 @@
+ 
++  // Chasers are orange arrowheads that point at the player, so they read apart from spinners
++  function drawChaser(h) {
++    const color = '#ff9a3c';
++    const ang = Math.atan2(player.y - h.y, player.x - h.x);
++    ctx.save();
++    ctx.globalAlpha = Math.min(1, h.age / FADE_IN);
++    ctx.translate(h.x, h.y);
++    ctx.rotate(ang);
++    ctx.shadowColor = color;
++    ctx.shadowBlur = 18;
++    ctx.fillStyle = color;
++    ctx.beginPath();
++    ctx.moveTo(h.r * 1.6, 0);
++    ctx.lineTo(-h.r * 1.0, h.r * 1.1);
++    ctx.lineTo(-h.r * 0.5, 0);
++    ctx.lineTo(-h.r * 1.0, -h.r * 1.1);
++    ctx.closePath();
++    ctx.fill();
++    ctx.shadowBlur = 0;
++    ctx.fillStyle = 'rgba(40,20,0,0.6)';
++    ctx.beginPath(); ctx.arc(-h.r * 0.2, 0, h.r * 0.3, 0, Math.PI * 2); ctx.fill();
++    ctx.restore();
++  }
++
+   function drawHazards() {
+@@ -587,3 +616,4 @@
+       if (h.type === 'dasher') { drawDasher(h); continue; }
+-      const color = h.type === 'seeker' ? '#ff9a3c' : '#ff2d6f';
++      if (h.type === 'seeker') { drawChaser(h); continue; }
++      const color = '#ff2d6f';
+       ctx.save();
+@@ -768,3 +798,3 @@
+     text('CONTROLS', W / 2, 352, 16, '#8ff');
+-    text('Move: Arrow keys / WASD, or move the mouse', W / 2, 378, 16);
++    text('Move: Arrow keys / WASD, the mouse, or drag on touch screens', W / 2, 378, 16);
+     text('Pause: P or Esc (pauses automatically when you leave the tab)', W / 2, 404, 16);

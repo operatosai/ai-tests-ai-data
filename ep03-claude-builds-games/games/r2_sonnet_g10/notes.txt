@@ -1,0 +1,19 @@
+**Playtest notes**
+- The game loads and renders. There are no console errors, and the animation runs at about 13 frames per second in the headless test (65 frames in 5 s).
+- The menu is clear. It explains every object and every control on screen.
+- The `gameState` hook stays in sync. The bot started a game, scored, lost at about 21 s, and restarted.
+- The random bot scored at most 2, so the early game is punishing for a player who isn't paying attention. That is acceptable for an arcade game.
+- The idle run never reached game over. The report doesn't say whether that run pressed start, so I can't tell whether the game is too lenient.
+- Missing an orb summons a spike. This is a good rule, but spikes can spawn quickly around the player right at the start.
+- The player can be hit the moment a game begins, with no grace period.
+- The HUD is a bit cramped at top right. The dash bar sits just under the lives text and its label is small.
+- The pause overlay, combo and extra-life system, golden orbs, and chaser spikes add variety.
+- Difficulty ramps through spawn rate, spike speed, and chasers, which fits the theme.
+
+**Changes I made**
+- Added a short invulnerability window at the start of a run, so the player isn't hit immediately.
+- Added a "GET READY" flash during that window.
+- Moved the dash bar and its label so they no longer crowd the lives text.
+- Made the player's blink while invulnerable and the pause logic safer.
+
+I haven't run this version. The edits are small, and the rest of the code is unchanged.

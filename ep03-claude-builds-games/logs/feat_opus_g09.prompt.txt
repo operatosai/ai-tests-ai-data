@@ -1,0 +1,89 @@
+Below is a unified diff between two consecutive versions of a small HTML arcade game. Read ONLY the diff. List the player-visible features/mechanics ADDED and REMOVED (plain text, one short line each; ignore refactors). Then answer with a final line exactly: COUNTS added=<int> removed=<int>
+
+--- 
++++ 
+@@ -30,2 +30,3 @@
+   const IDLE_LIMIT = 3;
++  const MAX_HAZARDS = 20;
+ 
+@@ -233,2 +234,6 @@
+ 
++  function inLaserLane(o){
++    if (!lasers) return false;
++    return lasers.some(l => (l.horiz ? Math.abs(o.y - l.pos) : Math.abs(o.x - l.pos)) < l.w/2 + 14);
++  }
+   function spawnOrb(){
+@@ -237,6 +242,6 @@
+       const big = Math.random() < 0.12;
+-      o = { x: rand(30, W-30), y: rand(TOP + 20, H-30), r: big ? 12 : 9, t: Math.random()*6, hue: rand(170, 300), big,
++      o = { x: rand(30, W-30), y: rand(TOP + 22, H-30), r: big ? 14 : 10, t: Math.random()*6, hue: rand(170, 300), big,
+             life: big ? 5 : rand(7, 10), born: 0, bonus: false };
+       tries++;
+-    } while (player && (dist(o, player) < 90 || hazards.some(h => dist(o,h) < 40)) && tries < 25);
++    } while (player && (dist(o, player) < 90 || hazards.some(h => dist(o,h) < 65) || inLaserLane(o)) && tries < 30);
+     o.max = o.life;
+@@ -249,3 +254,3 @@
+       const a = a0 + i * Math.PI / 3;
+-      orbs.push({ x: cx + Math.cos(a)*R, y: cy + Math.sin(a)*R, r: 9, t: Math.random()*6, hue: 45 + i*8, big: false,
++      orbs.push({ x: cx + Math.cos(a)*R, y: cy + Math.sin(a)*R, r: 10, t: Math.random()*6, hue: 45 + i*8, big: false,
+                   life: 4.5, max: 4.5, born: -i*0.06, bonus: true });
+@@ -533,3 +538,3 @@
+     spawnTimer -= dt;
+-    if (hazards.length + pending.length < Math.min(target, 24) && spawnTimer <= 0) {
++    if (hazards.length + pending.length < Math.min(target, MAX_HAZARDS) && spawnTimer <= 0) {
+       queueHazard();
+@@ -790,4 +795,4 @@
+       { w: 22, label: 'You', icon: x => { glowCircle(x+11, Y, 11, '#ffb627', 20); glowCircle(x+11, Y, 6, '#fff6d8', 4); } },
+-      { w: 18, label: 'Orb +10', icon: x => glowCircle(x+9, Y, 9, 'hsl(200,100%,62%)', 22) },
+-      { w: 24, label: 'Big +50', icon: x => glowCircle(x+12, Y, 12, 'hsl(280,100%,75%)', 25) },
++      { w: 20, label: 'Orb +10', icon: x => { glowCircle(x+10, Y, 10, 'hsl(200,100%,66%)', 26); glowCircle(x+10, Y, 4, '#fff', 4); } },
++      { w: 28, label: 'Big +50', icon: x => { glowCircle(x+14, Y, 14, 'hsl(280,100%,75%)', 30); glowCircle(x+14, Y, 6, '#fff', 4); } },
+       { w: 88, label: 'Avoid', icon: x => {
+@@ -833,6 +838,9 @@
+         const r = (o.r + Math.sin(o.t)*2) * grow;
+-        glowCircle(o.x, o.y, r, o.bonus ? `hsl(${o.hue},100%,62%)` : `hsl(${o.hue},100%,${o.big ? 75 : 64}%)`, o.big ? 35 : 26);
+-        glowCircle(o.x, o.y, r*0.42, '#fff', 5);
+-        ctx.strokeStyle = o.big ? `hsla(${o.hue},100%,80%,0.55)` : `hsla(${o.hue},100%,80%,0.35)`;
+-        ctx.lineWidth = o.big ? 2 : 1.5;
++        // soft halo so orbs read clearly against hazards
++        ctx.fillStyle = `hsla(${o.hue},100%,65%,0.13)`;
++        ctx.beginPath(); ctx.arc(o.x, o.y, r*2.1, 0, Math.PI*2); ctx.fill();
++        glowCircle(o.x, o.y, r, o.bonus ? `hsl(${o.hue},100%,64%)` : `hsl(${o.hue},100%,${o.big ? 76 : 68}%)`, o.big ? 38 : 30);
++        glowCircle(o.x, o.y, r*0.45, '#fff', 6);
++        ctx.strokeStyle = o.big ? `hsla(${o.hue},100%,82%,0.6)` : `hsla(${o.hue},100%,82%,0.45)`;
++        ctx.lineWidth = o.big ? 2.5 : 2;
+         ctx.beginPath(); ctx.arc(o.x, o.y, r + (o.big ? 6 : 5), -Math.PI/2, -Math.PI/2 + Math.PI*2*Math.max(0, o.life/o.max)); ctx.stroke();
+@@ -930,5 +938,5 @@
+         ctx.font = 'bold 15px system-ui,Arial,sans-serif';
+-        ctx.fillText('Combo ' + combo + (m === 4 ? '  x4 FEVER!' : m > 1 ? '  x' + m : '  (x2 at 5)'), 232, 32);
+-        ctx.fillStyle = 'rgba(255,255,100,0.25)'; ctx.fillRect(232, 50, 120, 3);
+-        ctx.fillStyle = m === 4 ? '#f8f' : '#ff6'; ctx.fillRect(232, 50, 120 * Math.max(0, comboTimer / 2), 3);
++        ctx.fillText('Combo ' + combo + (m === 4 ? '  x4 FEVER!' : m > 1 ? '  x' + m : '  (x2 at 5)'), 468, 30);
++        ctx.fillStyle = 'rgba(255,255,100,0.25)'; ctx.fillRect(468, 49, 120, 3);
++        ctx.fillStyle = m === 4 ? '#f8f' : '#ff6'; ctx.fillRect(468, 49, 120 * Math.max(0, comboTimer / 2), 3);
+       }
+@@ -939,9 +947,10 @@
+       if (state === 'playing') {
++        // dash meter lives in the HUD bar so it never covers the playfield
+         const ready = dashCd <= 0;
+-        ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
++        ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+         ctx.font = 'bold 13px system-ui,Arial,sans-serif';
+         ctx.fillStyle = ready ? '#9ff' : '#577';
+-        ctx.fillText(ready ? 'DASH READY' : 'DASH', 14, H - 20);
+-        ctx.fillStyle = 'rgba(150,255,255,0.15)'; ctx.fillRect(14, H - 14, 90, 4);
+-        ctx.fillStyle = '#9ff'; ctx.fillRect(14, H - 14, 90 * (1 - Math.max(0, dashCd) / DASH_CD), 4);
++        ctx.fillText(ready ? 'DASH READY' : 'DASH', 238, 15);
++        ctx.fillStyle = 'rgba(150,255,255,0.15)'; ctx.fillRect(238, 36, 90, 4);
++        ctx.fillStyle = '#9ff'; ctx.fillRect(238, 36, 90 * (1 - Math.max(0, dashCd) / DASH_CD), 4);
+       }
+@@ -954,3 +963,3 @@
+         const a = Math.min(1, (5 - elapsed) / 1.2) * 0.9;
+-        centerText('Arrows / WASD or hold mouse to move  \u00b7  SPACE to dash  \u00b7  grab the orbs!', H - 46, 16, '#dfe', '#000', a);
++        centerText('Arrows / WASD or hold mouse to move  \u00b7  SPACE to dash  \u00b7  grab the orbs!', H - 30, 16, '#dfe', '#000', a);
+       }
+@@ -986,3 +995,3 @@
+     }
+-    if (muted) { ctx.fillStyle = '#789'; ctx.font = '12px sans-serif'; ctx.textAlign = 'right'; ctx.fillText('muted', W-10, H-10); ctx.textAlign = 'left'; }
++    if (muted) { ctx.fillStyle = '#789'; ctx.font = '12px sans-serif'; ctx.textAlign = 'right'; ctx.textBaseline = 'alphabetic'; ctx.fillText('muted', W-10, H-10); ctx.textAlign = 'left'; }
+   }

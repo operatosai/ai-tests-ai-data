@@ -1,0 +1,18 @@
+## Playtest notes
+
+1. **Loads and runs cleanly.** No console errors, the test hook updates, and the bot moved through menu, playing, and game over. The bot died at 6.8 s, so the playtest says little about difficulty.
+2. **Menu is dense.** About 20 lines of text before the start prompt, and the "Press ENTER" line pulses down to grey. It works, but it is a wall of text.
+3. **HUD is readable.** Score, time, best, danger level, goal, and the progress bar are clear over the play field in f01 and f05.
+4. **Score farming through close calls.** In the game-over frame the bot had 4 points, 0 orbs, and two "CLOSE +2" bonuses. A player can oscillate near a spinner to farm the +2 bonus, which can rival orb income.
+5. **Seekers look like spinners.** Chasers use the same star silhouette as bouncers and differ only in colour. In f03 the top-edge hazards are crimson, not the orange chasers colour, so the threat is hard to read at a glance.
+6. **"CLOSE +2" ghost text on game over.** The popup from the last frame stays faintly visible behind the dim overlay. It is harmless but looks unfinished.
+7. **Idle run is inconclusive.** The report says `over: false, final: null`, which could mean the idle bot never pressed start, or that a motionless player survived. It needs a rerun that logs the state before judging.
+8. **Touch players get no control hint.** Touch-drag works, but the controls section only mentions keys and mouse.
+9. **Win pacing is untested.** Whether 50 points takes about 30 s or 5 min cannot be judged from this run. Pacing needs a skilled-player simulation.
+
+## Updated game
+
+Changes in this version:
+- Close-call bonus now has a per-hazard cooldown (1.5 s), which stops oscillation farming.
+- Chasers are drawn as orange arrowheads that point at the player, so they read differently from spinners.
+- Controls text mentions touch drag.

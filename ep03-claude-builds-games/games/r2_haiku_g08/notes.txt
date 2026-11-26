@@ -1,0 +1,17 @@
+## Playtest notes
+
+1. **Works:** The page loads with no console errors. Input starts the game, the score and HUD update, a game over happens, and restart works without a reload. `window.gameState` stays in sync.
+2. **Works:** The menu explains the controls and every hazard type, and the screenshots show clear visual separation between spinners (red), chasers (orange), and dashers (lime).
+3. **Bug:** `shake` only decays inside `update()`, which doesn't run on the game-over screen. After a death the background keeps jittering indefinitely, because the trail, orbs, and hazards are drawn inside a shaken transform.
+4. **Feel:** Death is abrupt. The screen cuts straight to the overlay with no beat to register the hit.
+5. **Feedback gap:** Reaching a new combo multiplier (x2, x3, x4) is silent and unmarked, so the player doesn't notice the reward tier changing.
+6. **Balance is unknown:** The bot scored at most 4 points in 6.65 s, so the report says nothing about pacing. The chaser and dasher types only appear after 20–25 s, so they were never exercised.
+7. **Unexplained:** The idle run never reached game over, and `final` is null. Bouncers should eventually reach an idle player, so either the run was short or something is off. I haven't confirmed which.
+8. **Screenshots:** `end.png` is a mid-run frame at 0:22, not a game-over screen, so the game-over visuals were not captured.
+9. **Strengths:** The close-call bonus only pays on entry into range, with a per-hazard cooldown, so it can't be farmed by hovering.
+
+## Changes in this version
+
+- Fixed the shake bug by decaying shake in the frame loop, so it settles on the game-over screen.
+- Added a short slow-motion beat on death before the game-over overlay appears.
+- Added a "COMBO!" popup, burst, and chime when the multiplier increases.

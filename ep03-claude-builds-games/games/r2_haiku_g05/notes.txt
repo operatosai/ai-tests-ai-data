@@ -1,0 +1,20 @@
+**PLAYTEST NOTES**
+
+1. **Works:** The game loads with no console errors, and the menu, input, scoring, game-over and restart all respond. The `window.gameState` hook updates. The title screen explains the rules and controls clearly.
+2. **Works:** The visuals are readable: glowing orbs, spinners, the lime dasher telegraph, a HUD band that keeps text legible, and a progress bar toward the goal.
+3. **Unclear:** The idle run never reached game over (`final: null`). The playtest doesn't say whether that is a bug or just too short a window. Seekers should eventually reach a stationary player, so I'd check this with a longer idle test.
+4. **Exploit:** The close-call bonus has a per-hazard cooldown of 1.5 s. A player can hover beside a bouncer and collect +2 every 1.5 s, so near-miss points can be farmed rather than earned.
+5. **Feel:** Death has a particle burst and a shake, but no clear flash, so the moment of losing is easy to miss.
+6. **Readability:** Seekers spawn off-screen and are invisible until they are close, so they feel like they appear from nowhere.
+7. **Menu:** The best score is not shown on the title screen, even though a best score is kept.
+8. **Pacing:** Difficulty rises only with time. Hazard count and speed grow, but orb density stays flat, so a run can feel like a slow ramp with no mid-run choices.
+9. **Screenshots:** Frame f03 shows a run that began with `BEST 6` already displayed, which confirms persistence works. The screenshots show no visual bugs such as overlapping text or off-canvas drawing.
+
+**Changes made in this version:**
+- Close-call bonus is now edge-triggered, awarded once per pass, so hovering no longer farms points.
+- Hits trigger a red screen flash in addition to the existing shake and burst.
+- Off-screen seekers show a pulsing edge marker where they will enter.
+- The menu shows the saved best score.
+- Removed the unused cooldown constant.
+
+The `window.gameState` hook is unchanged, and the game still runs in one self-contained file.

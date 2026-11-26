@@ -1,0 +1,14 @@
+**Playtest notes**
+
+1. **Works:** The file loads with zero console errors, the menu renders with controls, input changes the screen, score rises, the bot reaches game over, and restart works. The test hook stays in sync.
+2. **Menu:** Readable and complete, though it's dense (13 lines of text before the start prompt).
+3. **Gameplay frames (f01, f03, f05):** The HUD is clear, spinners and chasers are distinct, and the "+1" and close-call popups are visible.
+4. **Game over not verified:** `end.png` shows a fresh run at 0:01 with best 4, not the game-over screen. The bot saw the `over` state, but I can't confirm the layout visually.
+5. **Idle run inconclusive:** `over: false`, `final: null`. A motionless player at centre should be caught by chasers after 25s, so the run was probably too short or the state wasn't read. It needs a longer rerun.
+6. **Bot score is not a balance signal:** Max 4 points in 30s is random input, not evidence of difficulty.
+7. **Combo loss is silent:** When the combo times out, the multiplier disappears with no feedback.
+8. **Combos have no lasting payoff:** Best combo isn't tracked or shown, so chasing multipliers feels unrewarded.
+9. **Late game may get crowded:** Up to 12 hazards on an 800×600 field, with bouncers at 240 px/s, is untested beyond 30s.
+10. **Minor:** Chasers spawning at the top edge can sit under the HUD text.
+
+**Changes made:** Silent combo loss now shows "COMBO LOST" with a sound. Best combo is tracked per run and shown on the game-over and win screens. Nothing else was changed, and the test hook is unchanged.

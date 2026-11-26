@@ -1,0 +1,103 @@
+Below is a unified diff between two consecutive versions of a small HTML arcade game. Read ONLY the diff. List the player-visible features/mechanics ADDED and REMOVED (plain text, one short line each; ignore refactors). Then answer with a final line exactly: COUNTS added=<int> removed=<int>
+
+--- 
++++ 
+@@ -15,3 +15,3 @@
+   <canvas id="c" width="800" height="560"></canvas>
+-  <div id="help">Move: Arrow keys / WASD / ZQSD, or hold the mouse button to steer &middot; Dash: Space / Shift / right-click &middot; Touch: drag to steer, double-tap to dash &middot; P / Esc: pause &middot; M: mute</div>
++  <div id="help">Move: Arrow keys / WASD / ZQSD, or hold the mouse button to steer &middot; Dash: Space / Shift / right-click &middot; Touch: drag to steer, double-tap to dash &middot; P / Esc: pause &middot; M: mute &middot; R: restart after game over</div>
+ </div>
+@@ -23,2 +23,3 @@
+   const WIN_SCORE = 1000;
++  const HALF_SCORE = 500;
+   const DASH_TIME = 0.16, DASH_CD = 1.1, DASH_SPEED = 920;
+@@ -84,3 +85,4 @@
+     idle(){ tone(500,0.15,'square',0.05,250); },
+-    shower(){ [700,880,1050,1320].forEach((f,i)=>setTimeout(()=>tone(f,0.1,'sine',0.08,f*1.3),i*50)); }
++    shower(){ [700,880,1050,1320].forEach((f,i)=>setTimeout(()=>tone(f,0.1,'sine',0.08,f*1.3),i*50)); },
++    halfway(){ [392,523,659,784,1046].forEach((f,i)=>setTimeout(()=>tone(f,0.18,'triangle',0.11,f*1.25),i*80)); }
+   };
+@@ -118,8 +120,9 @@
+     initAudio();
+-    if (k === 'm') { muted = !muted; return; }
++    if (k === 'm') { if (!e.repeat) muted = !muted; return; }
+     if (state === 'playing') {
+-      if (k === 'p' || k === 'escape') { paused = !paused; return; }
++      if (k === 'p' || k === 'escape') { if (!e.repeat) paused = !paused; return; }
+       if (k === ' ' || k === 'shift') {
++        if (e.repeat) return;
+         if (paused) paused = false;
+-        else if (!e.repeat) tryDash();
++        else tryDash();
+         return;
+@@ -128,6 +131,8 @@
+     }
+-    if (k === 'enter' || k === ' ') startGame();
++    // ignore auto-repeat so a held dash key can't skip the game-over screen
++    if (e.repeat) return;
++    if (k === 'enter' || k === ' ' || k === 'r') startGame();
+   });
+   window.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
+-  window.addEventListener('blur', () => {
++  function autoPause(){
+     for (const k in keys) keys[k] = false;
+@@ -135,3 +140,5 @@
+     if (state === 'playing') paused = true;
+-  });
++  }
++  window.addEventListener('blur', autoPause);
++  document.addEventListener('visibilitychange', () => { if (document.hidden) autoPause(); });
+   function mpos(e){
+@@ -169,3 +176,3 @@
+   let dashT, dashCd, dashDir, lastDir, still;
+-  let heartT = 0, showerGot = 0, idleWarned = false, showerClears = 0;
++  let heartT = 0, showerGot = 0, idleWarned = false, showerClears = 0, halfway = false;
+   let best = 0, overTimer = 0, newBest = false, flash = 0, deathCause = '', grazes = 0;
+@@ -184,3 +191,3 @@
+     dashT = 0; dashCd = 0; dashDir = { x: 1, y: 0 }; lastDir = { x: 1, y: 0 }; still = 0;
+-    heartT = 0; showerGot = 0; idleWarned = false; showerClears = 0;
++    heartT = 0; showerGot = 0; idleWarned = false; showerClears = 0; halfway = false;
+     for (let i = 0; i < 5; i++) spawnOrb();
+@@ -324,2 +331,15 @@
+       return true;
++    }
++    if (!halfway && score >= HALF_SCORE) {
++      halfway = true;
++      sfx.halfway();
++      ring(player.x, player.y, '120,255,150', 560, 0.7);
++      burst(player.x, player.y, 130, 36, 260);
++      if (lives < 3) {
++        lives++;
++        popup(W/2, H/2 - 90, 'HALFWAY! +1 LIFE', '#7f9', 26);
++      } else {
++        popup(W/2, H/2 - 90, 'HALFWAY! +25 BONUS', '#7f9', 26);
++        setScore(score + 25);
++      }
+     }
+@@ -536,3 +556,4 @@
+     }
+-    const target = 3 + Math.floor(elapsed / 5) + (still > IDLE_LIMIT ? 2 : 0);
++    // gentler early ramp: +1 hazard every 6s (was 5s)
++    const target = 3 + Math.floor(elapsed / 6) + (still > IDLE_LIMIT ? 2 : 0);
+     spawnTimer -= dt;
+@@ -593,3 +614,3 @@
+           burst(mx, my, 190, 6, 120);
+-          popup(player.x, player.y - 22, 'GRAZE +2', '#cff', 16);
++          popup(player.x, player.y - 22, 'GRAZE +2', '#8ff', 17);
+           if (combo > 0) comboTimer = Math.min(2, comboTimer + 0.6);
+@@ -934,2 +955,5 @@
+       ctx.fillStyle = '#6ff'; ctx.fillRect(14, 40, 200 * Math.min(1, score / WIN_SCORE), 5);
++      // halfway marker on the score bar
++      ctx.fillStyle = halfway ? 'rgba(120,255,150,0.9)' : 'rgba(120,255,150,0.45)';
++      ctx.fillRect(14 + 200 * HALF_SCORE / WIN_SCORE - 1, 38, 2, 9);
+       if (combo >= 2 && state === 'playing') {
+@@ -978,3 +1002,3 @@
+       centerText('DASH (brief invincibility): Space / Shift / right-click / double-tap', 354, 17, '#9ff');
+-      centerText('3 lives  \u00b7  Reach ' + WIN_SCORE + ' points to win  \u00b7  P / Esc pause  \u00b7  M mute', 392, 15, '#9bc');
++      centerText('3 lives  \u00b7  Bonus life at ' + HALF_SCORE + '  \u00b7  Reach ' + WIN_SCORE + ' to win  \u00b7  P / Esc pause  \u00b7  M mute', 392, 15, '#9bc');
+       centerText('Press ENTER / SPACE or CLICK to start', 462, 26, '#ff6', '#fa0', 0.8 + 0.2*Math.sin(t*4));
+@@ -989,3 +1013,3 @@
+       centerText('Best: ' + best + '   \u00b7   Level: ' + level + '   \u00b7   Time: ' + Math.floor(elapsed) + 's   \u00b7   Grazes: ' + grazes + '   \u00b7   Showers cleared: ' + showerClears, 336, 16, '#9bc');
+-      if (overTimer <= 0) centerText('Press ENTER / SPACE or CLICK to play again', 400, 22, '#ff6', '#fa0', 0.8 + 0.2*Math.sin(t*4));
++      if (overTimer <= 0) centerText('Press ENTER / SPACE / R or CLICK to play again', 400, 22, '#ff6', '#fa0', 0.8 + 0.2*Math.sin(t*4));
+     } else if (paused) {

@@ -1,0 +1,1028 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Orb Runner</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #03040a; overflow: hidden; }
+  body { display: flex; align-items: center; justify-content: center; }
+  canvas {
+    display: block;
+    background: #0a0c1a;
+    outline: none;
+    width: min(100vw, calc(100vh * 4 / 3));
+    height: min(100vh, calc(100vw * 3 / 4));
+    box-shadow: 0 0 60px rgba(60, 120, 255, 0.25);
+    cursor: crosshair;
+    touch-action: none;
+    user-select: none;
+  }
+</style>
+</head>
+<body>
+<canvas id="c" width="800" height="600" tabindex="0"></canvas>
+<script>
+(() => {
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+
+  // ---- Constants ----
+  const WIN_SCORE = 50;
+  const PLAYER_R = 12;        // visual radius
+  const PLAYER_HIT = 9;       // collision radius for player
+  const HAZARD_HIT = 13;      // collision radius for hazards
+  const CLOSE_RANGE = 18;     // extra distance that counts as a close call
+  const CLOSE_BONUS = 2;      // points for a close call
+  const CLOSE_COOLDOWN = 1.5; // seconds before the same hazard can pay a close-call bonus again
+  const PLAYER_SPEED = 330;   // px/s
+  const GRACE_TIME = 1.5;     // invulnerable seconds after start / restart
+  const FADE_IN = 0.8;        // hazards are harmless until fully faded in
+  const FADE_OUT = 1.0;       // chasers are harmless for the last second of their life
+  const SEEKER_LIFE = 18;     // seconds a chaser stays before burning out
+  const SEEKER_SPAWN_OFF = 60; // chasers appear this far off-screen so their warning is visible
+  const SHIELD_TIME = 4;      // seconds of shield from a violet orb
+  const COMBO_WINDOW = 2.0;   // seconds allowed between pickups to keep a combo
+  const COMBO_LOST_MIN = 3;   // combos at or above this announce when they break
+  const ORB_TARGET = 6;       // orbs kept on the field
+  const ORB_START = 5;        // orbs spawned at the start of a run
+  const PARTICLE_CAP = 400;   // hard limit on live particles
+  const DASH_SPEED = 480;     // px/s during a dasher lunge (faster than the player)
+  const DASH_WIND = 0.6;      // telegraph time before a lunge
+  const DASH_LUNGE = 0.5;     // lunge duration
+  const SAFE_ORB_DIST = 90;   // minimum spawn distance from the player for orbs
+  const SAFE_HAZARD_DIST = 220; // minimum spawn distance from the player for bouncers/dashers
+  const DEATH_SLOW = 0.45;    // seconds of slow motion after a hit
+  const DEATH_SLOW_SCALE = 0.3; // time scale during that slow motion
+  const KILLER_NAME = { bouncer: 'a spinner', seeker: 'a chaser', dasher: 'a dasher' };
+
+  // ---- Test hook (keep in sync) ----
+  window.gameState = { score: 0, state: 'menu' };
+
+  // ---- Game state ----
+  let state = 'menu';         // 'menu' | 'playing' | 'over' | 'won'
+  let score = 0;
+  let best = loadBest();
+  let elapsed = 0;
+  let paused = false;
+  let cooldown = 0;           // seconds before restart is accepted
+  let shake = 0;
+  let flash = 0;              // red screen flash after a hit
+  let slowT = 0;              // seconds of death slow motion left (visual only)
+  let grace = 0;              // seconds of invulnerability left
+  let shieldT = 0;            // seconds of shield left
+  let combo = 0;              // consecutive quick pickups
+  let comboT = 0;             // time left to extend the combo
+  let bestCombo = 0;          // longest combo in the current run
+  let stats = { orbs: 0, smashed: 0 };
+  let muted = false;          // M toggles sound
+  let lastDanger = 1;         // to announce danger level-ups
+  let newBest = false;        // set when the last run beat the saved best
+  let lastKiller = 'bouncer'; // hazard type that ended the last run
+  let nearWinShown = false;   // "almost there" cue shown once per run
+
+  let player, orbs, hazards, particles, popups, stars;
+  const keys = { left: false, right: false, up: false, down: false };
+  const mouse = { x: W / 2, y: H / 2, active: false };
+
+  // ---- Utilities ----
+  const randRange = (a, b) => a + Math.random() * (b - a);
+  const dist = (ax, ay, bx, by) => Math.hypot(ax - bx, ay - by);
+  const dangerLevel = () => 1 + Math.floor(elapsed / 12);
+  const multiplier = () => Math.min(4, 1 + Math.floor((Math.max(combo, 1) - 1) / 4));
+  const hazardAlpha = h => Math.max(0, Math.min(1, h.age / FADE_IN, (h.life - h.age) / 0.8));
+  const fmtTime = s => {
+    const m = Math.floor(s / 60), sec = Math.floor(s % 60);
+    return `${m}:${sec < 10 ? '0' : ''}${sec}`;
+  };
+  function loadBest() {
+    try { return parseInt(localStorage.getItem('orbRunnerBest') || '0', 10) || 0; } catch (e) { return 0; }
+  }
+  function saveBest() {
+    try { localStorage.setItem('orbRunnerBest', String(best)); } catch (e) {}
+  }
+  function sync() {
+    window.gameState.score = score;
+    window.gameState.state = state;
+  }
+
+  // ---- Sound (generated with WebAudio, no files) ----
+  let audioCtx = null;
+  function ensureAudio() {
+    if (!audioCtx) {
+      try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { audioCtx = null; }
+    }
+    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+    return audioCtx;
+  }
+  function tone(freq, dur = 0.12, type = 'sine', vol = 0.15, slideTo = null, delay = 0) {
+    if (muted) return;
+    const ac = ensureAudio();
+    if (!ac) return;
+    const t0 = ac.currentTime + delay;
+    const o = ac.createOscillator();
+    const g = ac.createGain();
+    o.type = type;
+    o.frequency.setValueAtTime(freq, t0);
+    if (slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, t0 + dur);
+    g.gain.setValueAtTime(vol, t0);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g);
+    g.connect(ac.destination);
+    o.start(t0);
+    o.stop(t0 + dur + 0.02);
+  }
+  const sfx = {
+    collect: (c = 1) => tone(560 + Math.min(c, 12) * 35 + Math.random() * 60, 0.1, 'sine', 0.12, 1100),
+    gold: () => { tone(880, 0.1, 'triangle', 0.15); tone(1320, 0.15, 'triangle', 0.12, null, 0.08); },
+    mult: () => { tone(660, 0.1, 'triangle', 0.12); tone(990, 0.14, 'triangle', 0.12, null, 0.07); },
+    shield: () => [392, 523, 659, 784].forEach((f, i) => tone(f, 0.12, 'triangle', 0.12, null, i * 0.05)),
+    smash: () => tone(330, 0.18, 'square', 0.1, 60),
+    close: () => tone(1400, 0.07, 'sine', 0.06, 1800),
+    lost: () => tone(260, 0.22, 'triangle', 0.08, 140),
+    hit: () => tone(220, 0.5, 'sawtooth', 0.18, 40),
+    dash: () => tone(180, 0.22, 'square', 0.07, 520),
+    danger: () => { tone(330, 0.25, 'sawtooth', 0.08, 660); tone(495, 0.3, 'triangle', 0.1, null, 0.12); },
+    start: () => [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.12, 'square', 0.07, null, i * 0.07)),
+    win: () => [523, 659, 784, 1047, 1319].forEach((f, i) => tone(f, 0.25, 'triangle', 0.13, null, i * 0.1))
+  };
+
+  // ---- Spawning ----
+  const nearHazard = (x, y) => hazards.some(h => dist(x, y, h.x, h.y) < 60);
+
+  function spawnOrb() {
+    // Find a safe spot; if none is found this tick, skip the spawn instead of
+    // dropping an orb on top of the player.
+    let x = 0, y = 0, ok = false;
+    for (let tries = 0; tries < 25 && !ok; tries++) {
+      x = randRange(30, W - 30);
+      y = randRange(30, H - 30);
+      ok = dist(x, y, player.x, player.y) >= SAFE_ORB_DIST && !nearHazard(x, y);
+    }
+    if (!ok) return;
+
+    let kind = 'normal';
+    const r = Math.random();
+    if (elapsed > 8 && r < 0.06) kind = 'shield';
+    else if (r < 0.18) kind = 'gold';
+
+    const rad = kind === 'normal' ? 8 : 10;
+    const life = kind === 'shield' ? 7 : 9;
+    orbs.push({ x, y, r: rad, kind, life, age: 0, phase: Math.random() * Math.PI * 2 });
+  }
+
+  function spawnHazard() {
+    const seekers = hazards.filter(h => h.type === 'seeker').length;
+    const dashers = hazards.filter(h => h.type === 'dasher').length;
+    const r = Math.random();
+    const type = elapsed > 25 && seekers < 2 && r < 0.3 ? 'seeker'
+      : elapsed > 20 && dashers < 2 && r < 0.45 ? 'dasher'
+      : 'bouncer';
+    let x = 0, y = 0;
+    if (type === 'seeker') {
+      // Seekers enter from well outside the screen so their warning marker is visible
+      // for a moment before they arrive, and they never pop in next to the player
+      const side = Math.floor(Math.random() * 4);
+      if (side === 0) { x = -SEEKER_SPAWN_OFF; y = randRange(0, H); }
+      else if (side === 1) { x = W + SEEKER_SPAWN_OFF; y = randRange(0, H); }
+      else if (side === 2) { x = randRange(0, W); y = -SEEKER_SPAWN_OFF; }
+      else { x = randRange(0, W); y = H + SEEKER_SPAWN_OFF; }
+    } else {
+      // Bouncers and dashers must spawn well away from the player; if no safe
+      // spot is found this tick, skip the spawn rather than place it on the player.
+      let ok = false;
+      for (let tries = 0; tries < 30 && !ok; tries++) {
+        x = randRange(20, W - 20);
+        y = randRange(20, H - 20);
+        ok = dist(x, y, player.x, player.y) >= SAFE_HAZARD_DIST;
+      }
+      if (!ok) return;
+    }
+    hazards.push({
+      type,
+      x, y, r: 14,
+      a: Math.random() * Math.PI * 2,
+      spin: Math.random() * Math.PI * 2,
+      dir: Math.random() < 0.5 ? -1 : 1,
+      age: 0,
+      life: type === 'seeker' ? SEEKER_LIFE : Infinity, // chasers burn out; others stay
+      near: false,             // true while the player is inside its close-call range
+      cool: 0,                 // seconds until this hazard can pay another close-call bonus
+      // dasher-only state: 'drift' -> 'wind' (telegraph) -> 'lunge' -> 'drift'
+      phase: 'drift',
+      t: 1 + Math.random() * 1.5,
+      tx: 0, ty: 0,            // locked aim point during wind-up
+      lx: 0, ly: 0             // lunge direction
+    });
+  }
+
+  function moveDasher(h, dt) {
+    h.t -= dt;
+    if (h.phase === 'drift') {
+      const sp = 70 + Math.min(elapsed, 120) * 0.35;   // slow drift, creeps up over time
+      h.x += Math.cos(h.a) * sp * dt;
+      h.y += Math.sin(h.a) * sp * dt;
+      if (h.x < h.r) { h.x = h.r; h.a = Math.PI - h.a; }
+      if (h.x > W - h.r) { h.x = W - h.r; h.a = Math.PI - h.a; }
+      if (h.y < h.r) { h.y = h.r; h.a = -h.a; }
+      if (h.y > H - h.r) { h.y = H - h.r; h.a = -h.a; }
+      if (h.t <= 0) {
+        // Lock the aim point now so the telegraph is fair: the player can step out of the line
+        h.phase = 'wind';
+        h.t = DASH_WIND;
+        h.tx = player.x;
+        h.ty = player.y;
+        sfx.dash();
+      }
+    } else if (h.phase === 'wind') {
+      if (h.t <= 0) {
+        const dx = h.tx - h.x, dy = h.ty - h.y, d = Math.hypot(dx, dy) || 1;
+        h.lx = dx / d;
+        h.ly = dy / d;
+        h.phase = 'lunge';
+        h.t = DASH_LUNGE;
+      }
+    } else { // lunge
+      h.x += h.lx * DASH_SPEED * dt;
+      h.y += h.ly * DASH_SPEED * dt;
+      let hitWall = false;
+      if (h.x < h.r) { h.x = h.r; hitWall = true; }
+      if (h.x > W - h.r) { h.x = W - h.r; hitWall = true; }
+      if (h.y < h.r) { h.y = h.r; hitWall = true; }
+      if (h.y > H - h.r) { h.y = H - h.r; hitWall = true; }
+      if (h.t <= 0 || hitWall) {
+        h.phase = 'drift';
+        h.t = 2 + Math.random() * 1.2;
+        h.a = Math.random() * Math.PI * 2;
+      }
+    }
+  }
+
+  function burst(x, y, rgb, n, speed) {
+    for (let i = 0; i < n; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const s = speed * (0.3 + Math.random() * 0.7);
+      const life = 0.5 + Math.random() * 0.5;
+      particles.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life, max: life, rgb });
+    }
+  }
+
+  // ---- Reset / state changes ----
+  function reset() {
+    score = 0;
+    elapsed = 0;
+    shake = 0;
+    flash = 0;
+    slowT = 0;
+    paused = false;
+    grace = GRACE_TIME;
+    shieldT = 0;
+    combo = 0;
+    comboT = 0;
+    bestCombo = 0;
+    lastDanger = 1;
+    newBest = false;
+    nearWinShown = false;
+    stats = { orbs: 0, smashed: 0 };
+    player = { x: W / 2, y: H / 2, trail: [] };
+    orbs = [];
+    hazards = [];
+    particles = [];
+    popups = [];
+    for (let i = 0; i < ORB_START; i++) spawnOrb();
+  }
+
+  function startGame() {
+    ensureAudio();
+    reset();
+    state = 'playing';
+    sfx.start();
+    sync();
+  }
+
+  function die(cause) {
+    state = 'over';
+    paused = false;
+    lastKiller = cause || 'bouncer';
+    newBest = score > best && score > 0;
+    best = Math.max(best, score);
+    saveBest();
+    shake = 1;
+    flash = 1;
+    slowT = DEATH_SLOW;
+    burst(player.x, player.y, '255,80,120', 40, 320);
+    sfx.hit();
+    cooldown = 0.7;
+    sync();
+  }
+
+  function win() {
+    state = 'won';
+    paused = false;
+    newBest = score > best && score > 0;
+    best = Math.max(best, score);
+    saveBest();
+    burst(player.x, player.y, '255,210,60', 60, 380);
+    sfx.win();
+    cooldown = 0.7;
+    sync();
+  }
+
+  function togglePause() {
+    if (state === 'playing') paused = !paused;
+  }
+
+  function pauseIfPlaying() {
+    if (state === 'playing') paused = true;
+  }
+
+  function onPress() {
+    if (state === 'menu') startGame();
+    else if (state === 'playing' && paused) paused = false;   // any press resumes from pause
+    else if ((state === 'over' || state === 'won') && cooldown <= 0) startGame();
+  }
+
+  // ---- Update ----
+  function update(dt) {
+    // Player movement: keyboard overrides mouse; mouse follows cursor when no keys held
+    let dx = 0, dy = 0;
+    if (keys.left) dx--;
+    if (keys.right) dx++;
+    if (keys.up) dy--;
+    if (keys.down) dy++;
+    if (dx || dy) {
+      const l = Math.hypot(dx, dy);
+      player.x += dx / l * PLAYER_SPEED * dt;
+      player.y += dy / l * PLAYER_SPEED * dt;
+    } else if (mouse.active) {
+      const ddx = mouse.x - player.x, ddy = mouse.y - player.y, d = Math.hypot(ddx, ddy);
+      if (d > 1) {
+        const step = Math.min(d, PLAYER_SPEED * 1.3 * dt);
+        player.x += ddx / d * step;
+        player.y += ddy / d * step;
+      }
+    }
+    player.x = Math.max(PLAYER_R, Math.min(W - PLAYER_R, player.x));
+    player.y = Math.max(PLAYER_R, Math.min(H - PLAYER_R, player.y));
+
+    player.trail.push({ x: player.x, y: player.y, life: 0.35 });
+    for (const t of player.trail) t.life -= dt;
+    player.trail = player.trail.filter(t => t.life > 0);
+
+    elapsed += dt;
+    if (grace > 0) grace = Math.max(0, grace - dt);
+    if (shieldT > 0) shieldT = Math.max(0, shieldT - dt);
+    if (comboT > 0) {
+      comboT -= dt;
+      if (comboT <= 0) {
+        comboT = 0;
+        // A broken combo used to vanish silently; announce it when it mattered
+        if (combo >= COMBO_LOST_MIN) {
+          popups.push({ x: player.x, y: player.y - 34, text: 'COMBO LOST', life: 0.9, rgb: '255,122,160' });
+          sfx.lost();
+        }
+        combo = 0;
+      }
+    }
+
+    // Announce each danger level-up so the ramp is visible
+    const dl = dangerLevel();
+    if (dl !== lastDanger) {
+      lastDanger = dl;
+      popups.push({ x: W / 2, y: H / 2 - 60, text: `DANGER ${dl}`, life: 1.6, rgb: '255,122,160' });
+      sfx.danger();
+    }
+
+    // Spawn: hazard count grows with time; orbs are kept topped up
+    const maxHazards = Math.min(3 + Math.floor(elapsed / 12), 12);
+    if (hazards.length < maxHazards && Math.random() < dt * 1.2) spawnHazard();
+    if (orbs.length < ORB_TARGET && Math.random() < dt * 2.2) spawnOrb();
+
+    // Orbs age out
+    for (const o of orbs) o.age += dt;
+    orbs = orbs.filter(o => o.age < o.life);
+
+    // Hazards move; speed ramps with time
+    const bounceSpeed = Math.min(60 + elapsed * 2.5, 240);
+    const seekSpeed = Math.min(40 + elapsed * 1.0, 150);   // always slower than the player
+    for (const h of hazards) {
+      h.age += dt;
+      if (h.cool > 0) h.cool = Math.max(0, h.cool - dt);
+      h.spin += dt * (h.type === 'seeker' ? 3 : 1.5) * h.dir;
+      if (h.type === 'bouncer') {
+        h.x += Math.cos(h.a) * bounceSpeed * dt;
+        h.y += Math.sin(h.a) * bounceSpeed * dt;
+        if (h.x < h.r) { h.x = h.r; h.a = Math.PI - h.a; }
+        if (h.x > W - h.r) { h.x = W - h.r; h.a = Math.PI - h.a; }
+        if (h.y < h.r) { h.y = h.r; h.a = -h.a; }
+        if (h.y > H - h.r) { h.y = H - h.r; h.a = -h.a; }
+      } else if (h.type === 'seeker') {
+        const ddx = player.x - h.x, ddy = player.y - h.y;
+        const d = Math.hypot(ddx, ddy) || 1;
+        h.x += ddx / d * seekSpeed * dt;
+        h.y += ddy / d * seekSpeed * dt;
+      } else {
+        moveDasher(h, dt);
+      }
+    }
+    // Chasers burn out after their lifetime so the field never silts up with them
+    hazards = hazards.filter(h => h.age < h.life);
+
+    // Orb pickups
+    for (let i = orbs.length - 1; i >= 0; i--) {
+      const o = orbs[i];
+      if (dist(o.x, o.y, player.x, player.y) < o.r + PLAYER_R) {
+        orbs.splice(i, 1);
+        stats.orbs++;
+        if (o.kind === 'shield') {
+          shieldT = SHIELD_TIME;
+          burst(o.x, o.y, '180,140,255', 30, 200);
+          popups.push({ x: o.x, y: o.y, text: 'SHIELD', life: 0.9, rgb: '180,140,255' });
+          sfx.shield();
+        } else {
+          const before = multiplier();
+          combo = comboT > 0 ? combo + 1 : 1;
+          if (combo > bestCombo) bestCombo = combo;
+          comboT = COMBO_WINDOW;
+          const gold = o.kind === 'gold';
+          const pts = (gold ? 5 : 1) * multiplier();
+          const rgb = gold ? '255,210,60' : '90,240,255';
+          score += pts;
+          burst(o.x, o.y, rgb, gold ? 24 : 12, 160);
+          popups.push({ x: o.x, y: o.y, text: `+${pts}`, life: 0.8, rgb });
+          if (gold) sfx.gold(); else sfx.collect(combo);
+          // Reward tier change: announce the new multiplier
+          if (multiplier() > before) {
+            popups.push({ x: player.x, y: player.y - 34, text: `COMBO x${multiplier()}!`, life: 1.2, rgb: '255,210,60' });
+            burst(player.x, player.y, '255,210,60', 18, 220);
+            sfx.mult();
+          }
+        }
+      }
+    }
+
+    // Hazard collisions: shield smashes them, otherwise they are lethal once faded in.
+    // Passing close (without touching) earns a near-miss bonus, at most once per
+    // CLOSE_COOLDOWN for each hazard so hovering beside one cannot farm points.
+    const reach = HAZARD_HIT + PLAYER_HIT;
+    for (let i = hazards.length - 1; i >= 0; i--) {
+      const h = hazards[i];
+      // Harmless while fading in or out
+      if (h.age < FADE_IN || h.age > h.life - FADE_OUT) continue;
+      const d = dist(h.x, h.y, player.x, player.y);
+      if (d < reach) {
+        if (shieldT > 0) {
+          hazards.splice(i, 1);
+          stats.smashed++;
+          score += 3;
+          burst(h.x, h.y, '255,120,180', 26, 240);
+          popups.push({ x: h.x, y: h.y, text: '+3', life: 0.8, rgb: '255,150,190' });
+          sfx.smash();
+        } else if (grace <= 0) {
+          die(h.type);
+          return;
+        }
+      } else {
+        const near = d < reach + CLOSE_RANGE;
+        if (near && !h.near && shieldT <= 0 && grace <= 0 && h.cool <= 0) {
+          score += CLOSE_BONUS;
+          h.cool = CLOSE_COOLDOWN;
+          popups.push({ x: player.x, y: player.y - 18, text: `CLOSE +${CLOSE_BONUS}`, life: 0.8, rgb: '255,255,255' });
+          sfx.close();
+        }
+        h.near = near;
+      }
+    }
+
+    // "Almost there" cue, once per run, when the goal is close
+    if (!nearWinShown && score >= WIN_SCORE - 10) {
+      nearWinShown = true;
+      popups.push({ x: W / 2, y: H / 2 - 30, text: 'ALMOST THERE!', life: 1.4, rgb: '255,210,60' });
+      sfx.danger();
+    }
+
+    // Win check
+    if (score >= WIN_SCORE) { win(); return; }
+  }
+
+  function updateParticles(dt) {
+    for (const p of particles) {
+      p.life -= dt;
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      const drag = Math.pow(0.1, dt);
+      p.vx *= drag;
+      p.vy *= drag;
+    }
+    particles = particles.filter(p => p.life > 0);
+    if (particles.length > PARTICLE_CAP) particles.splice(0, particles.length - PARTICLE_CAP);
+    for (const p of popups) {
+      p.life -= dt;
+      p.y -= 35 * dt;
+    }
+    popups = popups.filter(p => p.life > 0);
+  }
+
+  function updateStars(dt) {
+    const boost = state === 'playing' ? Math.min(elapsed / 60, 1.5) : 0;
+    for (const s of stars) {
+      s.y += s.v * (1 + boost) * dt;
+      if (s.y > H) { s.y = 0; s.x = Math.random() * W; }
+    }
+  }
+
+  // ---- Rendering ----
+  function drawGrid() {
+    ctx.strokeStyle = 'rgba(80,120,255,0.06)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (let x = 0; x <= W; x += 40) { ctx.moveTo(x + 0.5, 0); ctx.lineTo(x + 0.5, H); }
+    for (let y = 0; y <= H; y += 40) { ctx.moveTo(0, y + 0.5); ctx.lineTo(W, y + 0.5); }
+    ctx.stroke();
+  }
+
+  function drawStars() {
+    for (const s of stars) {
+      ctx.fillStyle = `rgba(200,220,255,${0.25 + s.s * 0.35})`;
+      ctx.fillRect(s.x, s.y, s.s, s.s);
+    }
+  }
+
+  function drawTrail() {
+    for (const t of player.trail) {
+      const k = Math.max(0, t.life / 0.35);
+      ctx.globalAlpha = k * 0.4;
+      ctx.fillStyle = shieldT > 0 ? '#c9b3ff' : '#8ff';
+      ctx.beginPath();
+      ctx.arc(t.x, t.y, PLAYER_R * k * 0.8, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function drawOrbs() {
+    for (const o of orbs) {
+      const fade = Math.min(1, (o.life - o.age), o.age / 0.3);
+      const pulse = 1 + Math.sin(o.age * 4 + o.phase) * 0.15;
+      const r = o.r * pulse;
+      const col = o.kind === 'gold' ? '255,210,60' : o.kind === 'shield' ? '180,140,255' : '90,240,255';
+      ctx.save();
+      ctx.globalAlpha = fade;
+      const g = ctx.createRadialGradient(o.x, o.y, 0, o.x, o.y, r * 3);
+      g.addColorStop(0, `rgba(${col},0.6)`);
+      g.addColorStop(1, `rgba(${col},0)`);
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(o.x, o.y, r * 3, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = `rgb(${col})`;
+      ctx.beginPath(); ctx.arc(o.x, o.y, r, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.beginPath(); ctx.arc(o.x - r * 0.3, o.y - r * 0.3, r * 0.3, 0, Math.PI * 2); ctx.fill();
+      if (o.kind === 'shield') {
+        ctx.strokeStyle = `rgba(${col},0.9)`;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.arc(o.x, o.y, r * 1.6, 0, Math.PI * 2); ctx.stroke();
+      }
+      ctx.restore();
+    }
+  }
+
+  function drawDasher(h) {
+    const color = '#b6ff3c';
+    const p = (Math.sin(performance.now() / 60) + 1) / 2;
+    ctx.save();
+    ctx.globalAlpha = hazardAlpha(h);
+    // Telegraph: a dashed aim line and a pulsing ring while winding up
+    if (h.phase === 'wind') {
+      ctx.strokeStyle = `rgba(182,255,60,${0.3 + p * 0.5})`;
+      ctx.lineWidth = 2;
+      ctx.setLineDash([6, 6]);
+      ctx.beginPath(); ctx.moveTo(h.x, h.y); ctx.lineTo(h.tx, h.ty); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.beginPath(); ctx.arc(h.x, h.y, h.r * 2 + p * 6, 0, Math.PI * 2); ctx.stroke();
+    }
+    let ang = h.spin;
+    if (h.phase === 'wind') ang = Math.atan2(h.ty - h.y, h.tx - h.x);
+    else if (h.phase === 'lunge') ang = Math.atan2(h.ly, h.lx);
+    ctx.translate(h.x, h.y);
+    ctx.rotate(ang);
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 18;
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(h.r * 1.7, 0);
+    ctx.lineTo(-h.r * 1.1, h.r * 1.1);
+    ctx.lineTo(-h.r * 0.5, 0);
+    ctx.lineTo(-h.r * 1.1, -h.r * 1.1);
+    ctx.closePath();
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = 'rgba(20,30,0,0.6)';
+    ctx.beginPath(); ctx.arc(-h.r * 0.1, 0, h.r * 0.35, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  }
+
+  // Chasers are orange arrowheads that point at the player, so they read apart from spinners
+  function drawChaser(h) {
+    const color = '#ff9a3c';
+    const ang = Math.atan2(player.y - h.y, player.x - h.x);
+    ctx.save();
+    ctx.globalAlpha = hazardAlpha(h);
+    ctx.translate(h.x, h.y);
+    ctx.rotate(ang);
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 18;
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(h.r * 1.6, 0);
+    ctx.lineTo(-h.r * 1.0, h.r * 1.1);
+    ctx.lineTo(-h.r * 0.5, 0);
+    ctx.lineTo(-h.r * 1.0, -h.r * 1.1);
+    ctx.closePath();
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = 'rgba(40,20,0,0.6)';
+    ctx.beginPath(); ctx.arc(-h.r * 0.2, 0, h.r * 0.3, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  }
+
+  function drawHazards() {
+    for (const h of hazards) {
+      if (h.type === 'dasher') { drawDasher(h); continue; }
+      if (h.type === 'seeker') { drawChaser(h); continue; }
+      const color = '#ff2d6f';
+      ctx.save();
+      ctx.globalAlpha = hazardAlpha(h);
+      ctx.translate(h.x, h.y);
+      ctx.rotate(h.spin);
+      ctx.shadowColor = color;
+      ctx.shadowBlur = 18;
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      const pts = 8;
+      for (let i = 0; i < pts * 2; i++) {
+        const rr = i % 2 === 0 ? h.r * 1.5 : h.r * 0.55;
+        const a = i * Math.PI / pts;
+        ctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr);
+      }
+      ctx.closePath();
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = 'rgba(20,0,10,0.6)';
+      ctx.beginPath(); ctx.arc(0, 0, h.r * 0.45, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  // Off-screen chasers show a pulsing marker at the edge where they will come in
+  function drawEdgeWarnings() {
+    if (state !== 'playing') return;
+    const p = (Math.sin(performance.now() / 120) + 1) / 2;
+    for (const h of hazards) {
+      if (h.type !== 'seeker') continue;
+      if (h.x >= 0 && h.x <= W && h.y >= 0 && h.y <= H) continue;
+      const x = Math.max(16, Math.min(W - 16, h.x));
+      const y = Math.max(16, Math.min(H - 16, h.y));
+      ctx.save();
+      ctx.shadowColor = '#ff9a3c';
+      ctx.shadowBlur = 14;
+      ctx.fillStyle = `rgba(255,154,60,${0.5 + p * 0.4})`;
+      ctx.beginPath(); ctx.arc(x, y, 5 + p * 2, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  function drawPlayer() {
+    // Flicker during grace period so the player can see they are safe for now
+    const flicker = grace > 0 && Math.floor(performance.now() / 100) % 2 === 0 ? 0.4 : 1;
+    ctx.save();
+    ctx.globalAlpha = flicker;
+    ctx.shadowColor = shieldT > 0 ? '#b48cff' : '#8ff';
+    ctx.shadowBlur = 24;
+    ctx.fillStyle = '#e8ffff';
+    ctx.beginPath();
+    ctx.arc(player.x, player.y, PLAYER_R, 0, Math.PI * 2);
+    ctx.fill();
+    if (shieldT > 0) {
+      const a = Math.min(1, shieldT) * (0.6 + Math.sin(performance.now() / 80) * 0.2);
+      ctx.strokeStyle = `rgba(180,140,255,${a})`;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(player.x, player.y, PLAYER_R + 7, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function drawParticles() {
+    for (const p of particles) {
+      const a = Math.max(0, p.life / p.max);
+      ctx.fillStyle = `rgba(${p.rgb},${a})`;
+      ctx.fillRect(p.x - 1.5, p.y - 1.5, 3, 3);
+    }
+  }
+
+  function drawPopups() {
+    ctx.save();
+    ctx.font = 'bold 15px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    for (const p of popups) {
+      ctx.globalAlpha = Math.max(0, Math.min(1, p.life / 0.8));
+      ctx.fillStyle = `rgb(${p.rgb})`;
+      ctx.fillText(p.text, p.x, p.y - 10);
+    }
+    ctx.restore();
+  }
+
+  function text(t, x, y, size = 18, color = '#cfe') {
+    ctx.save();
+    ctx.font = `${size}px system-ui, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = color;
+    ctx.fillText(t, x, y);
+    ctx.restore();
+  }
+
+  function glowText(t, x, y, size, color) {
+    ctx.save();
+    ctx.font = `bold ${size}px system-ui, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 25;
+    ctx.fillStyle = color;
+    ctx.fillText(t, x, y);
+    ctx.restore();
+  }
+
+  function dim(alpha = 0.72) {
+    ctx.fillStyle = `rgba(5,6,13,${alpha})`;
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  function pulseAlpha() {
+    return 0.7 + Math.sin(performance.now() / 300) * 0.3;
+  }
+
+  function drawHUD() {
+    // Backing band so the text stays readable over hazards and orbs
+    const band = ctx.createLinearGradient(0, 0, 0, 90);
+    band.addColorStop(0, 'rgba(5,6,13,0.75)');
+    band.addColorStop(1, 'rgba(5,6,13,0)');
+    ctx.fillStyle = band;
+    ctx.fillRect(0, 0, W, 90);
+
+    ctx.save();
+    ctx.textBaseline = 'top';
+    ctx.font = 'bold 20px system-ui, sans-serif';
+    ctx.fillStyle = '#e8ffff';
+    ctx.textAlign = 'left';
+    ctx.fillText(`SCORE ${score}`, 16, 14);
+    ctx.textAlign = 'center';
+    ctx.fillText(`TIME ${fmtTime(elapsed)}`, W / 2, 14);
+    ctx.textAlign = 'right';
+    ctx.fillText(`BEST ${Math.max(best, score)}`, W - 16, 14);
+
+    ctx.font = '13px system-ui, sans-serif';
+    ctx.fillStyle = '#ff7aa0';
+    ctx.textAlign = 'left';
+    ctx.fillText(`DANGER ${dangerLevel()}`, 16, 42);
+    ctx.fillStyle = 'rgba(255,255,255,0.7)';
+    ctx.textAlign = 'right';
+    ctx.fillText(`GOAL ${WIN_SCORE}`, W - 16, 42);
+    if (muted) {
+      ctx.fillStyle = 'rgba(255,255,255,0.45)';
+      ctx.fillText('SOUND OFF (M)', W - 16, 62);
+    }
+
+    if (combo >= 2) {
+      ctx.fillStyle = '#ffd23f';
+      ctx.textAlign = 'left';
+      ctx.fillText(`COMBO ${combo}  x${multiplier()}`, 16, 62);
+    }
+    if (shieldT > 0) {
+      ctx.fillStyle = '#c9b3ff';
+      ctx.textAlign = 'left';
+      ctx.fillText('SHIELD', 16, 82);
+      ctx.fillStyle = 'rgba(180,140,255,0.2)';
+      ctx.fillRect(90, 88, 120, 6);
+      ctx.fillStyle = '#b48cff';
+      ctx.fillRect(90, 88, 120 * (shieldT / SHIELD_TIME), 6);
+    }
+
+    const p = Math.min(score / WIN_SCORE, 1);
+    ctx.fillStyle = 'rgba(255,255,255,0.12)';
+    ctx.fillRect(16, H - 16, W - 32, 6);
+    ctx.fillStyle = '#ffd23f';
+    ctx.fillRect(16, H - 16, (W - 32) * p, 6);
+    ctx.restore();
+  }
+
+  function drawMenu() {
+    dim(0.6);
+    glowText('ORB RUNNER', W / 2, 100, 64, '#5ff0ff');
+    text('Collect glowing orbs to score. Gold is worth 5 (x combo).', W / 2, 176, 17, '#cfe');
+    text('Chain pickups quickly for a combo multiplier (up to x4).', W / 2, 202, 17, '#cfe');
+    text('Dodge spinners and orange chasers. Skim past them for a close-call bonus.', W / 2, 228, 17, '#cfe');
+    text('Lime dashers flash a warning line, then lunge. Step out of the line!', W / 2, 254, 17, '#d8ff9a');
+    text('Violet orbs grant a shield that smashes hazards for points.', W / 2, 280, 17, '#cbb8ff');
+    text(`Reach ${WIN_SCORE} points to win.`, W / 2, 310, 17, '#ffd23f');
+
+    text('CONTROLS', W / 2, 352, 16, '#8ff');
+    text('Move: Arrow keys / WASD, the mouse, or drag on touch screens', W / 2, 378, 16);
+    text('Pause: P or Esc (pauses automatically when you leave the tab)', W / 2, 404, 16);
+    text('Sound on/off: M', W / 2, 430, 16);
+    text('Start / restart: Enter, Space, or click', W / 2, 456, 16);
+
+    text(`Best: ${best}`, W / 2, 492, 18, '#ffd23f');
+
+    ctx.save();
+    ctx.globalAlpha = pulseAlpha();
+    glowText('Press ENTER / SPACE or CLICK to start', W / 2, 530, 22, '#ffffff');
+    ctx.restore();
+  }
+
+  function drawOver() {
+    dim();
+    glowText('GAME OVER', W / 2, 190, 60, '#ff2d6f');
+    text(`Score: ${score}`, W / 2, 275, 28, '#e8ffff');
+    text(`Best: ${Math.max(best, score)}   Time: ${fmtTime(elapsed)}`, W / 2, 315, 18, '#cfe');
+    text(`Orbs: ${stats.orbs}   Smashed: ${stats.smashed}   Best combo: x${bestCombo}`, W / 2, 345, 16, '#8ff');
+    text(`Caught by ${KILLER_NAME[lastKiller] || 'a hazard'}`, W / 2, 372, 16, '#ff9ab8');
+    if (newBest) glowText('NEW BEST!', W / 2, 404, 24, '#ffd23f');
+    if (cooldown <= 0) {
+      ctx.save();
+      ctx.globalAlpha = pulseAlpha();
+      text('Press ENTER / SPACE or CLICK to try again', W / 2, 440, 20, '#ffffff');
+      ctx.restore();
+    }
+  }
+
+  function drawWon() {
+    dim();
+    glowText('YOU WIN!', W / 2, 190, 60, '#ffd23f');
+    text(`Reached ${WIN_SCORE} points in ${fmtTime(elapsed)}`, W / 2, 275, 24, '#e8ffff');
+    text(`Best: ${Math.max(best, score)}`, W / 2, 315, 18, '#cfe');
+    text(`Orbs: ${stats.orbs}   Smashed: ${stats.smashed}   Best combo: x${bestCombo}`, W / 2, 345, 16, '#8ff');
+    if (newBest) glowText('NEW BEST!', W / 2, 382, 24, '#ffd23f');
+    if (cooldown <= 0) {
+      ctx.save();
+      ctx.globalAlpha = pulseAlpha();
+      text('Press ENTER / SPACE or CLICK to play again', W / 2, 415, 20, '#ffffff');
+      ctx.restore();
+    }
+  }
+
+  function drawPaused() {
+    dim(0.5);
+    glowText('PAUSED', W / 2, H / 2 - 10, 48, '#5ff0ff');
+    text('Press P or Esc, or click, to resume', W / 2, H / 2 + 40, 18, '#cfe');
+  }
+
+  function render() {
+    ctx.save();
+    if (shake > 0) {
+      ctx.translate(randRange(-1, 1) * shake * 10, randRange(-1, 1) * shake * 10);
+    }
+    ctx.fillStyle = '#0a0c1a';
+    ctx.fillRect(-30, -30, W + 60, H + 60);
+    drawGrid();
+    drawStars();
+    if (state !== 'menu') {
+      drawOrbs();
+      drawHazards();
+      drawEdgeWarnings();
+      drawTrail();
+      drawPlayer();
+      drawParticles();
+      drawPopups();
+    }
+    ctx.restore();
+
+    if (flash > 0 && state !== 'menu') {
+      ctx.fillStyle = `rgba(255,60,110,${flash * 0.35})`;
+      ctx.fillRect(0, 0, W, H);
+    }
+
+    if (state === 'playing') {
+      drawHUD();
+      if (paused) drawPaused();
+    } else if (state === 'menu') {
+      drawMenu();
+    } else if (state === 'over') {
+      drawOver();
+    } else if (state === 'won') {
+      drawWon();
+    }
+  }
+
+  // ---- Input ----
+  const KEYMAP = {
+    ArrowLeft: 'left', KeyA: 'left',
+    ArrowRight: 'right', KeyD: 'right',
+    ArrowUp: 'up', KeyW: 'up',
+    ArrowDown: 'down', KeyS: 'down'
+  };
+
+  window.addEventListener('keydown', e => {
+    const k = KEYMAP[e.code];
+    if (k) { keys[k] = true; e.preventDefault(); }
+    if (e.code === 'Space' || e.code === 'Enter') {
+      e.preventDefault();
+      if (!e.repeat) onPress();
+    }
+    if ((e.code === 'KeyP' || e.code === 'Escape') && !e.repeat) {
+      if (state === 'playing') togglePause();
+    }
+    if (e.code === 'KeyM' && !e.repeat) {
+      muted = !muted;
+    }
+  });
+
+  window.addEventListener('keyup', e => {
+    const k = KEYMAP[e.code];
+    if (k) keys[k] = false;
+  });
+
+  // Leaving the window pauses the game so the player is never killed while away
+  window.addEventListener('blur', () => {
+    for (const k in keys) keys[k] = false;
+    pauseIfPlaying();
+  });
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      for (const k in keys) keys[k] = false;
+      pauseIfPlaying();
+    }
+  });
+
+  function toCanvas(p) {
+    const r = canvas.getBoundingClientRect();
+    return { x: (p.clientX - r.left) * W / r.width, y: (p.clientY - r.top) * H / r.height };
+  }
+
+  canvas.addEventListener('mousemove', e => {
+    const p = toCanvas(e);
+    mouse.x = p.x;
+    mouse.y = p.y;
+    mouse.active = true;
+  });
+  canvas.addEventListener('mouseleave', () => { mouse.active = false; });
+  canvas.addEventListener('mousedown', () => {
+    canvas.focus();
+    onPress();
+  });
+
+  canvas.addEventListener('touchstart', e => {
+    e.preventDefault();
+    const p = toCanvas(e.touches[0]);
+    mouse.x = p.x; mouse.y = p.y; mouse.active = true;
+    onPress();
+  }, { passive: false });
+  canvas.addEventListener('touchmove', e => {
+    e.preventDefault();
+    const p = toCanvas(e.touches[0]);
+    mouse.x = p.x; mouse.y = p.y; mouse.active = true;
+  }, { passive: false });
+
+  // ---- Main loop ----
+  stars = Array.from({ length: 70 }, () => ({
+    x: Math.random() * W,
+    y: Math.random() * H,
+    s: 0.5 + Math.random() * 1.5,
+    v: 8 + Math.random() * 25
+  }));
+  player = { x: W / 2, y: H / 2, trail: [] };
+  orbs = [];
+  hazards = [];
+  particles = [];
+  popups = [];
+
+  let lastTime = performance.now();
+  function frame(now) {
+    const dt = Math.min((now - lastTime) / 1000, 0.05);
+    lastTime = now;
+
+    if (state === 'playing' && !paused) update(dt);
+    if (state === 'over' || state === 'won') cooldown -= dt;
+
+    // Visual-only timers run here so they also settle on the game-over screen
+    const sdt = slowT > 0 ? dt * DEATH_SLOW_SCALE : dt;
+    if (slowT > 0) slowT = Math.max(0, slowT - dt);
+    shake = Math.max(0, shake - dt * 2);
+    flash = Math.max(0, flash - dt * 2.5);
+    updateParticles(sdt);
+    updateStars(dt);
+
+    render();
+    sync();
+    requestAnimationFrame(frame);
+  }
+  sync();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

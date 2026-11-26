@@ -1,0 +1,470 @@
+Below is a unified diff between two consecutive versions of a small HTML arcade game. Read ONLY the diff. List the player-visible features/mechanics ADDED and REMOVED (plain text, one short line each; ignore refactors). Then answer with a final line exactly: COUNTS added=<int> removed=<int>
+
+--- 
++++ 
+@@ -8,3 +8,3 @@
+   #wrap{position:relative;}
+-  canvas{display:block;background:radial-gradient(ellipse at center,#111a33 0%,#05060f 80%);border:2px solid #234;border-radius:8px;box-shadow:0 0 30px #0af4;cursor:crosshair;}
++  canvas{display:block;background:radial-gradient(ellipse at center,#111a33 0%,#05060f 80%);border:2px solid #234;border-radius:8px;box-shadow:0 0 30px #0af4;cursor:crosshair;max-width:96vw;height:auto;}
+   #help{text-align:center;font-size:13px;color:#8ab;margin-top:8px;}
+@@ -36,15 +36,21 @@
+     if (!actx || muted) return;
+-    const t = actx.currentTime;
+-    const o = actx.createOscillator(), g = actx.createGain();
+-    o.type = type || 'sine';
+-    o.frequency.setValueAtTime(freq, t);
+-    if (slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, t + dur);
+-    g.gain.setValueAtTime(vol || 0.15, t);
+-    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+-    o.connect(g); g.connect(actx.destination);
+-    o.start(t); o.stop(t + dur + 0.02);
++    try {
++      const t = actx.currentTime;
++      const o = actx.createOscillator(), g = actx.createGain();
++      o.type = type || 'sine';
++      o.frequency.setValueAtTime(freq, t);
++      if (slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, t + dur);
++      g.gain.setValueAtTime(vol || 0.15, t);
++      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
++      o.connect(g); g.connect(actx.destination);
++      o.start(t); o.stop(t + dur + 0.02);
++    } catch(e) {}
+   }
+   const sfx = {
+-    orb(combo){ tone(520 + Math.min(combo,10)*40, 0.12, 'sine', 0.15, 1200 + combo*60); },
++    orb(combo){ tone(520 + Math.min(combo,12)*40, 0.12, 'sine', 0.15, 1200 + Math.min(combo,12)*60); },
++    big(){ tone(660,0.1,'triangle',0.15,1320); setTimeout(()=>tone(990,0.15,'sine',0.12,1980),70); },
+     hit(){ tone(220, 0.35, 'sawtooth', 0.2, 50); },
++    smash(){ tone(300, 0.2, 'square', 0.1, 900); },
++    power(){ [440,660,880].forEach((f,i)=>setTimeout(()=>tone(f,0.12,'triangle',0.12,f*1.5),i*60)); },
++    warn(){ tone(160, 0.08, 'square', 0.04); },
+     over(){ tone(400,0.25,'triangle',0.2,200); setTimeout(()=>tone(260,0.5,'triangle',0.2,80),220); },
+@@ -64,6 +70,12 @@
+     if (k === 'm') { muted = !muted; return; }
+-    if (state === 'playing' && k === 'p') { paused = !paused; return; }
++    if (state === 'playing' && (k === 'p' || k === 'escape')) { paused = !paused; return; }
+     if ((k === 'enter' || k === ' ') && state !== 'playing') startGame();
++    else if (k === ' ' && state === 'playing' && paused) paused = false;
+   });
+   window.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
++  window.addEventListener('blur', () => {
++    for (const k in keys) keys[k] = false;
++    mouse.down = false;
++    if (state === 'playing') paused = true;
++  });
+   function mpos(e){
+@@ -77,2 +89,3 @@
+     if (state !== 'playing') { startGame(); return; }
++    if (paused) { paused = false; return; }
+     mouse.down = true;
+@@ -84,3 +97,6 @@
+   let state = 'menu', paused = false;
+-  let player, orbs, hazards, particles, score, lives, elapsed, level, spawnTimer, combo, comboTimer, invuln, shake, best = 0, overTimer = 0;
++  let player, orbs, hazards, pending, particles, popups, trail, power;
++  let score, lives, elapsed, level, spawnTimer, combo, comboTimer, invuln, shield, shake, hitstop, levelBanner, powerTimer;
++  let best = 0, overTimer = 0, newBest = false;
++  try { best = parseInt(localStorage.getItem('orbrush_best') || '0', 10) || 0; } catch(e) { best = 0; }
+ 
+@@ -90,9 +106,10 @@
+   function reset(){
+-    player = { x: W/2, y: H/2, r: 12, speed: 280 };
+-    orbs = []; hazards = []; particles = [];
++    player = { x: W/2, y: H/2, r: 12, speed: 285 };
++    orbs = []; hazards = []; pending = []; particles = []; popups = []; trail = []; power = null;
+     setScore(0);
+-    lives = 3; elapsed = 0; level = 1; spawnTimer = 0;
+-    combo = 0; comboTimer = 0; invuln = 1.5; shake = 0; paused = false;
+-    for (let i = 0; i < 4; i++) spawnOrb();
+-    for (let i = 0; i < 2; i++) spawnHazard();
++    lives = 3; elapsed = 0; level = 1; spawnTimer = 1;
++    combo = 0; comboTimer = 0; invuln = 1.5; shield = 0; shake = 0; hitstop = 0; paused = false;
++    levelBanner = 0; powerTimer = 14; newBest = false;
++    for (let i = 0; i < 5; i++) spawnOrb();
++    for (let i = 0; i < 2; i++) queueHazard();
+   }
+@@ -100,3 +117,3 @@
+     if (state === 'playing') return;
+-    if (state === 'over' || state === 'won') { if (overTimer > 0) return; }
++    if ((state === 'over' || state === 'won') && overTimer > 0) return;
+     reset();
+@@ -105,2 +122,9 @@
+   }
++  function endGame(s){
++    newBest = score > best;
++    best = Math.max(best, score);
++    try { localStorage.setItem('orbrush_best', String(best)); } catch(e) {}
++    setState(s); overTimer = 0.8;
++    mouse.down = false;
++  }
+ 
+@@ -108,2 +132,3 @@
+   function dist(a,b){ return Math.hypot(a.x-b.x, a.y-b.y); }
++  function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
+ 
+@@ -112,10 +137,11 @@
+     do {
+-      o = { x: rand(30, W-30), y: rand(50, H-30), r: 8, t: Math.random()*6, hue: rand(160, 300), big: Math.random() < 0.12 };
+-      if (o.big) o.r = 12;
++      const big = Math.random() < 0.12;
++      o = { x: rand(30, W-30), y: rand(55, H-30), r: big ? 12 : 8, t: Math.random()*6, hue: rand(170, 300), big,
++            life: big ? 5 : rand(7, 10), born: 0 };
+       tries++;
+-    } while (player && dist(o, player) < 80 && tries < 20);
++    } while (player && (dist(o, player) < 90 || hazards.some(h => dist(o,h) < 40)) && tries < 25);
++    o.max = o.life;
+     orbs.push(o);
+   }
+-  function spawnHazard(){
+-    // spawn from an edge, away from the player
++  function queueHazard(){
+     let x, y, tries = 0;
+@@ -123,8 +149,12 @@
+       const side = Math.floor(Math.random()*4);
+-      if (side === 0) { x = rand(0,W); y = -20; }
+-      else if (side === 1) { x = W+20; y = rand(0,H); }
+-      else if (side === 2) { x = rand(0,W); y = H+20; }
+-      else { x = -20; y = rand(0,H); }
++      if (side === 0) { x = rand(20,W-20); y = -20; }
++      else if (side === 1) { x = W+20; y = rand(20,H-20); }
++      else if (side === 2) { x = rand(20,W-20); y = H+20; }
++      else { x = -20; y = rand(20,H-20); }
+       tries++;
+-    } while (player && Math.hypot(x-player.x, y-player.y) < 200 && tries < 20);
++    } while (player && Math.hypot(x-player.x, y-player.y) < 220 && tries < 20);
++    pending.push({ x, y, t: 0.85, max: 0.85 });
++    sfx.warn();
++  }
++  function spawnHazardAt(x, y){
+     const speed = rand(90, 130) + level * 14;
+@@ -141,2 +171,6 @@
+   }
++  function popup(x, y, txt, color, size){
++    popups.push({ x, y, txt, color: color || '#fff', size: size || 16, life: 0.9, max: 0.9 });
++  }
++  function mult(){ return Math.min(1 + Math.floor(combo/5), 4); }
+ 
+@@ -145,3 +179,2 @@
+     if (overTimer > 0) overTimer -= dt;
+-    // particles always animate
+     for (let i = particles.length-1; i >= 0; i--) {
+@@ -151,8 +184,14 @@
+     }
++    for (let i = popups.length-1; i >= 0; i--) {
++      const p = popups[i]; p.y -= 40*dt; p.life -= dt;
++      if (p.life <= 0) popups.splice(i,1);
++    }
+     if (shake > 0) shake = Math.max(0, shake - dt*30);
+     if (state !== 'playing' || paused) return;
++    if (hitstop > 0) { hitstop -= dt; return; }
+ 
+     elapsed += dt;
++    if (levelBanner > 0) levelBanner -= dt;
+     const newLevel = 1 + Math.floor(elapsed / 15);
+-    if (newLevel > level) { level = newLevel; sfx.level(); burst(W/2, 30, 50, 20, 200); }
++    if (newLevel > level) { level = newLevel; levelBanner = 1.6; sfx.level(); burst(W/2, 30, 50, 20, 200); }
+ 
+@@ -175,7 +214,9 @@
+     }
+-    player.x = Math.max(player.r, Math.min(W - player.r, player.x));
+-    player.y = Math.max(player.r, Math.min(H - player.r, player.y));
++    player.x = clamp(player.x, player.r, W - player.r);
++    player.y = clamp(player.y, player.r, H - player.r);
++    trail.push({ x: player.x, y: player.y });
++    if (trail.length > 14) trail.shift();
+     if (invuln > 0) invuln -= dt;
+-
+-    // combo decay
++    if (shield > 0) shield -= dt;
++
+     if (comboTimer > 0) { comboTimer -= dt; if (comboTimer <= 0) combo = 0; }
+@@ -185,9 +226,11 @@
+       const o = orbs[i];
+-      o.t += dt*3;
+-      if (dist(o, player) < o.r + player.r) {
++      o.t += dt*3; o.life -= dt; o.born += dt;
++      if (dist(o, player) < o.r + player.r + 2) {
+         combo++; comboTimer = 2;
+-        const pts = (o.big ? 50 : 10) * Math.min(1 + Math.floor(combo/5), 4);
++        const m = mult();
++        const pts = (o.big ? 50 : 10) * m;
+         setScore(score + pts);
+         burst(o.x, o.y, o.hue, o.big ? 24 : 12, 180);
+-        sfx.orb(combo);
++        popup(o.x, o.y - 10, '+' + pts + (m > 1 ? ' x' + m : ''), o.big ? '#ffe36b' : `hsl(${o.hue},100%,80%)`, o.big ? 20 : 15);
++        if (o.big) sfx.big(); else sfx.orb(combo);
+         orbs.splice(i,1);
+@@ -195,4 +238,3 @@
+         if (score >= WIN_SCORE) {
+-          best = Math.max(best, score);
+-          setState('won'); overTimer = 0.8; sfx.win();
++          endGame('won'); sfx.win();
+           burst(player.x, player.y, 60, 60, 300);
+@@ -200,11 +242,35 @@
+         }
+-      }
+-    }
+-
+-    // hazard spawning: target count grows with time
++      } else if (o.life <= 0) {
++        burst(o.x, o.y, o.hue, 6, 60);
++        orbs.splice(i,1);
++        spawnOrb();
++      }
++    }
++
++    // shield power-up
++    powerTimer -= dt;
++    if (!power && powerTimer <= 0) {
++      power = { x: rand(60, W-60), y: rand(80, H-60), life: 7, t: 0 };
++      powerTimer = rand(16, 24);
++    }
++    if (power) {
++      power.life -= dt; power.t += dt;
++      if (dist(power, player) < player.r + 14) {
++        shield = 5; sfx.power();
++        popup(power.x, power.y - 14, 'SHIELD!', '#ffe36b', 20);
++        burst(power.x, power.y, 50, 30, 220);
++        power = null;
++      } else if (power.life <= 0) power = null;
++    }
++
++    // hazard warnings -> hazards
++    for (let i = pending.length-1; i >= 0; i--) {
++      pending[i].t -= dt;
++      if (pending[i].t <= 0) { spawnHazardAt(pending[i].x, pending[i].y); pending.splice(i,1); }
++    }
+     const target = 2 + Math.floor(elapsed / 6);
+     spawnTimer -= dt;
+-    if (hazards.length < Math.min(target, 28) && spawnTimer <= 0) {
+-      spawnHazard();
+-      spawnTimer = Math.max(0.4, 2 - level*0.15);
++    if (hazards.length + pending.length < Math.min(target, 26) && spawnTimer <= 0) {
++      queueHazard();
++      spawnTimer = Math.max(0.45, 2 - level*0.15);
+     }
+@@ -212,3 +278,4 @@
+     // hazards
+-    for (const h of hazards) {
++    for (let i = hazards.length-1; i >= 0; i--) {
++      const h = hazards[i];
+       if (h.homing) {
+@@ -228,4 +295,14 @@
+       }
+-      if (invuln <= 0 && dist(h, player) < h.r*0.8 + player.r) {
+-        lives--; invuln = 1.6; shake = 12; combo = 0;
++      if (dist(h, player) < h.r*0.8 + player.r) {
++        if (shield > 0) {
++          hazards.splice(i,1);
++          setScore(score + 25);
++          popup(h.x, h.y - 10, '+25 SMASH', '#ffb', 16);
++          burst(h.x, h.y, h.homing ? 290 : 0, 22, 240);
++          sfx.smash(); shake = 5;
++          if (score >= WIN_SCORE) { endGame('won'); sfx.win(); burst(player.x, player.y, 60, 60, 300); return; }
++          continue;
++        }
++        if (invuln > 0) continue;
++        lives--; invuln = 1.6; shake = 12; combo = 0; comboTimer = 0; hitstop = 0.12;
+         burst(player.x, player.y, 0, 30, 260);
+@@ -233,4 +310,3 @@
+         if (lives <= 0) {
+-          best = Math.max(best, score);
+-          setState('over'); overTimer = 0.8;
++          endGame('over');
+           setTimeout(sfx.over, 150);
+@@ -238,2 +314,3 @@
+         }
++        popup(player.x, player.y - 20, lives === 1 ? 'LAST LIFE!' : '-1 life', '#f77', 18);
+       }
+@@ -247,3 +324,3 @@
+     ctx.fillStyle = color;
+-    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2); ctx.fill();
++    ctx.beginPath(); ctx.arc(x, y, Math.max(0.5, r), 0, Math.PI*2); ctx.fill();
+     ctx.restore();
+@@ -275,3 +352,51 @@
+   }
+-  function centerText(txt, y, size, color, glow){
++  function drawWarning(p, t){
++    const x = clamp(p.x, 18, W-18), y = clamp(p.y, 18, H-18);
++    const pulse = 0.5 + 0.5*Math.sin(t*25);
++    ctx.save();
++    ctx.globalAlpha = 0.5 + 0.5*pulse;
++    ctx.translate(x, y);
++    ctx.shadowColor = '#f33'; ctx.shadowBlur = 15;
++    ctx.fillStyle = '#f44';
++    ctx.beginPath(); ctx.moveTo(0,-13); ctx.lineTo(12,9); ctx.lineTo(-12,9); ctx.closePath(); ctx.fill();
++    ctx.shadowBlur = 0;
++    ctx.fillStyle = '#200'; ctx.font = 'bold 14px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
++    ctx.fillText('!', 0, 2);
++    ctx.restore();
++  }
++  function drawPower(p, t){
++    const blink = p.life < 2 && Math.floor(p.life*8) % 2 === 0;
++    if (blink) return;
++    ctx.save();
++    ctx.translate(p.x, p.y + Math.sin(p.t*4)*3);
++    ctx.strokeStyle = 'rgba(255,227,107,0.6)'; ctx.lineWidth = 2;
++    ctx.beginPath(); ctx.arc(0,0,18 + Math.sin(p.t*6)*2,0,Math.PI*2); ctx.stroke();
++    ctx.rotate(p.t*2);
++    ctx.shadowColor = '#fd4'; ctx.shadowBlur = 25;
++    ctx.fillStyle = '#ffe36b';
++    ctx.beginPath(); ctx.moveTo(0,-12); ctx.lineTo(9,0); ctx.lineTo(0,12); ctx.lineTo(-9,0); ctx.closePath(); ctx.fill();
++    ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(0,0,3,0,Math.PI*2); ctx.fill();
++    ctx.restore();
++  }
++  function drawPlayer(t){
++    for (let i = 0; i < trail.length; i++) {
++      const a = i / trail.length;
++      ctx.globalAlpha = a * 0.35;
++      ctx.fillStyle = '#fc4';
++      ctx.beginPath(); ctx.arc(trail[i].x, trail[i].y, player.r * a * 0.9, 0, Math.PI*2); ctx.fill();
++    }
++    ctx.globalAlpha = 1;
++    if (invuln > 0 && Math.floor(invuln*10) % 2 === 0) return;
++    glowCircle(player.x, player.y, player.r, '#ffb627', 28);
++    glowCircle(player.x, player.y, player.r*0.55, '#fff6d8', 6);
++    if (shield > 0 && !(shield < 1.2 && Math.floor(shield*10) % 2 === 0)) {
++      ctx.save();
++      ctx.translate(player.x, player.y); ctx.rotate(t*3);
++      ctx.strokeStyle = '#ffe36b'; ctx.lineWidth = 3; ctx.shadowColor = '#fd4'; ctx.shadowBlur = 18;
++      ctx.setLineDash([10, 6]);
++      ctx.beginPath(); ctx.arc(0,0,player.r + 9,0,Math.PI*2); ctx.stroke();
++      ctx.restore();
++    }
++  }
++  function centerText(txt, y, size, color, glow, alpha){
+     ctx.save();
+@@ -280,2 +405,3 @@
+     ctx.fillStyle = color;
++    if (alpha !== undefined) ctx.globalAlpha = alpha;
+     if (glow) { ctx.shadowColor = glow; ctx.shadowBlur = 20; }
+@@ -286,3 +412,3 @@
+   let menuOrbs = [];
+-  for (let i = 0; i < 14; i++) menuOrbs.push({ x: rand(0,W), y: rand(0,H), vx: rand(-30,30), vy: rand(-30,30), hue: rand(160,300), t: Math.random()*6 });
++  for (let i = 0; i < 14; i++) menuOrbs.push({ x: rand(0,W), y: rand(0,H), vx: rand(-30,30), vy: rand(-30,30), hue: rand(170,300), t: Math.random()*6 });
+ 
+@@ -301,10 +427,17 @@
+       for (const o of orbs) {
+-        const r = o.r + Math.sin(o.t)*2;
++        if (o.life < 2 && Math.floor(o.life*8) % 2 === 0) continue;
++        const grow = Math.min(1, o.born * 4);
++        const r = (o.r + Math.sin(o.t)*2) * grow;
+         glowCircle(o.x, o.y, r, `hsl(${o.hue},100%,${o.big ? 75 : 62}%)`, o.big ? 35 : 22);
+         glowCircle(o.x, o.y, r*0.4, '#fff', 5);
+-      }
++        if (o.big) {
++          ctx.strokeStyle = `hsla(${o.hue},100%,80%,0.5)`; ctx.lineWidth = 2;
++          ctx.beginPath(); ctx.arc(o.x, o.y, r + 6, -Math.PI/2, -Math.PI/2 + Math.PI*2*(o.life/o.max)); ctx.stroke();
++        }
++      }
++      if (power) drawPower(power, t);
+       for (const h of hazards) drawHazard(h);
+-      if (state === 'playing' && !(invuln > 0 && Math.floor(invuln*10) % 2 === 0)) {
+-        glowCircle(player.x, player.y, player.r, '#4ff', 25);
+-        glowCircle(player.x, player.y, player.r*0.55, '#eff', 6);
++      if (state === 'playing') {
++        for (const p of pending) drawWarning(p, t);
++        drawPlayer(t);
+       }
+@@ -317,2 +450,11 @@
+     ctx.globalAlpha = 1;
++    for (const p of popups) {
++      ctx.save();
++      ctx.globalAlpha = Math.max(0, p.life / p.max);
++      ctx.font = `bold ${p.size}px system-ui,Arial,sans-serif`;
++      ctx.textAlign = 'center'; ctx.fillStyle = p.color;
++      ctx.shadowColor = '#000'; ctx.shadowBlur = 4;
++      ctx.fillText(p.txt, p.x, p.y);
++      ctx.restore();
++    }
+     ctx.restore();
+@@ -331,10 +473,25 @@
+         ctx.globalAlpha = i < lives ? 1 : 0.2;
+-        glowCircle(W - 14 - (2-i)*22 - 8, 23, 7, '#4ff', 10);
++        glowCircle(W - 14 - (2-i)*22 - 8, 23, 7, '#ffb627', 10);
+       }
+       ctx.globalAlpha = 1;
+-      if (combo >= 5 && state === 'playing') {
+-        ctx.textAlign = 'left'; ctx.fillStyle = '#ff6';
+-        ctx.fillText('Combo x' + Math.min(1 + Math.floor(combo/5), 4), 14, 38);
++      // progress bar to win
++      ctx.fillStyle = 'rgba(255,255,255,0.08)'; ctx.fillRect(14, 38, 200, 4);
++      ctx.fillStyle = '#6ff'; ctx.fillRect(14, 38, 200 * Math.min(1, score / WIN_SCORE), 4);
++      if (combo >= 2 && state === 'playing') {
++        const m = mult();
++        ctx.textAlign = 'left'; ctx.fillStyle = m > 1 ? '#ff6' : '#bcd';
++        ctx.font = 'bold 16px system-ui,Arial,sans-serif';
++        ctx.fillText('Combo ' + combo + (m > 1 ? '  x' + m : '  (x2 at 5)'), 14, 48);
++        ctx.fillStyle = 'rgba(255,255,100,0.25)'; ctx.fillRect(14, 68, 120, 3);
++        ctx.fillStyle = '#ff6'; ctx.fillRect(14, 68, 120 * Math.max(0, comboTimer / 2), 3);
++      }
++      if (shield > 0 && state === 'playing') {
++        ctx.textAlign = 'right'; ctx.fillStyle = '#ffe36b'; ctx.font = 'bold 15px system-ui,Arial,sans-serif';
++        ctx.fillText('SHIELD ' + shield.toFixed(1) + 's', W - 14, 40);
+       }
+       ctx.restore();
++      if (levelBanner > 0 && state === 'playing') {
++        const a = Math.min(1, levelBanner * 2);
++        centerText('LEVEL ' + level, H/2 - 120, 44, '#ffe36b', '#fa0', a * 0.9);
++      }
+     }
+@@ -343,17 +500,37 @@
+       ctx.fillStyle = 'rgba(0,0,10,0.45)'; ctx.fillRect(0,0,W,H);
+-      centerText('ORB RUSH', 150, 72, '#6ff', '#0ff');
+-      centerText('Collect glowing orbs. Avoid the red spikes.', 230, 20, '#cde');
+-      centerText('Big orbs = 50 pts. Chain pickups quickly for a combo multiplier.', 262, 16, '#9bc');
+-      centerText('Hazards multiply and speed up. Purple ones hunt you!', 290, 16, '#9bc');
+-      centerText('Move: Arrow keys / WASD   or   hold mouse button to steer', 340, 17, '#dfe');
+-      centerText('3 lives  \u00b7  Reach ' + WIN_SCORE + ' points to win  \u00b7  P pause  \u00b7  M mute', 370, 15, '#9bc');
+-      if (Math.floor(t*2) % 2 === 0) centerText('Press ENTER / SPACE or CLICK to start', 440, 24, '#ff6', '#fa0');
+-      if (best) centerText('Best: ' + best, 490, 16, '#9bc');
++      centerText('ORB RUSH', 130, 72, '#6ff', '#0ff');
++      // legend
++      glowCircle(W/2 - 250, 210, 11, '#ffb627', 20); glowCircle(W/2 - 250, 210, 6, '#fff6d8', 4);
++      ctx.save(); ctx.font = 'bold 15px system-ui,Arial,sans-serif'; ctx.fillStyle = '#dfe'; ctx.textBaseline = 'middle';
++      ctx.fillText('You', W/2 - 232, 210);
++      glowCircle(W/2 - 150, 210, 8, 'hsl(200,100%,62%)', 18);
++      ctx.fillText('Orb +10', W/2 - 136, 210);
++      glowCircle(W/2 - 40, 210, 12, 'hsl(280,100%,75%)', 25);
++      ctx.fillText('Big +50', W/2 - 22, 210);
++      ctx.restore();
++      drawHazard({ x: W/2 + 75, y: 210, r: 12, rot: t, homing: false });
++      drawHazard({ x: W/2 + 105, y: 210, r: 12, rot: -t, homing: true });
++      ctx.save(); ctx.font = 'bold 15px system-ui,Arial,sans-serif'; ctx.fillStyle = '#dfe'; ctx.textBaseline = 'middle';
++      ctx.fillText('Avoid', W/2 + 124, 210);
++      ctx.restore();
++      drawPower({ x: W/2 + 205, y: 210, life: 9, t: t }, t);
++      ctx.save(); ctx.font = 'bold 15px system-ui,Arial,sans-serif'; ctx.fillStyle = '#dfe'; ctx.textBaseline = 'middle';
++      ctx.fillText('Shield', W/2 + 225, 210);
++      ctx.restore();
++
++      centerText('Collect glowing orbs before they fade. Chain pickups for up to x4 points.', 260, 17, '#cde');
++      centerText('Hazards are announced by a red  !  at the edge. Purple ones hunt you.', 288, 16, '#9bc');
++      centerText('Grab the gold shield to smash hazards for +25.', 314, 16, '#9bc');
++      centerText('Move: Arrow keys / WASD   or   hold mouse button to steer', 356, 17, '#dfe');
++      centerText('3 lives  \u00b7  Reach ' + WIN_SCORE + ' points to win  \u00b7  P pause  \u00b7  M mute', 384, 15, '#9bc');
++      centerText('Press ENTER / SPACE or CLICK to start', 450, 24, '#ff6', '#fa0', 0.55 + 0.45*Math.sin(t*4));
++      if (best) centerText('Best: ' + best, 498, 16, '#9bc');
+     } else if (state === 'over' || state === 'won') {
+       ctx.fillStyle = 'rgba(0,0,10,0.6)'; ctx.fillRect(0,0,W,H);
+-      if (state === 'over') centerText('GAME OVER', 200, 64, '#f55', '#f00');
+-      else centerText('YOU WIN!', 200, 64, '#6f6', '#0f0');
+-      centerText('Score: ' + score, 270, 28, '#fff');
+-      centerText('Best: ' + best + '   \u00b7   Level reached: ' + level, 310, 18, '#9bc');
+-      if (overTimer <= 0 && Math.floor(t*2) % 2 === 0) centerText('Press ENTER / SPACE or CLICK to play again', 390, 22, '#ff6', '#fa0');
++      if (state === 'over') centerText('GAME OVER', 190, 64, '#f55', '#f00');
++      else centerText('YOU WIN!', 190, 64, '#6f6', '#0f0');
++      centerText('Score: ' + score, 262, 30, '#fff');
++      if (newBest) centerText('NEW BEST!', 300, 20, '#ffe36b', '#fa0', 0.6 + 0.4*Math.sin(t*6));
++      centerText('Best: ' + best + '   \u00b7   Level reached: ' + level + '   \u00b7   Time: ' + Math.floor(elapsed) + 's', 334, 17, '#9bc');
++      if (overTimer <= 0) centerText('Press ENTER / SPACE or CLICK to play again', 400, 22, '#ff6', '#fa0', 0.55 + 0.45*Math.sin(t*4));
+     } else if (paused) {
+@@ -361,3 +538,3 @@
+       centerText('PAUSED', H/2 - 10, 50, '#6ff', '#0ff');
+-      centerText('Press P to resume', H/2 + 40, 18, '#cde');
++      centerText('Press P or click to resume', H/2 + 40, 18, '#cde');
+     }
+@@ -369,3 +546,3 @@
+   function loop(now){
+-    const dt = Math.min(0.05, (now - last) / 1000);
++    const dt = Math.min(0.05, Math.max(0, (now - last) / 1000));
+     last = now;

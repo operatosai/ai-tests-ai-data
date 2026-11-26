@@ -1,0 +1,22 @@
+## Playtest notes
+
+1. **What works:** all 8 automated checks pass. The game loads, the menu shows, input moves the player, the score goes up, you can lose, and restart works. No console errors, and it holds a steady 60 fps.
+2. **Looks:** the neon look is clear and easy to read. Spiky red mines, purple hunters, the gold shield ring and the dash cooldown ring are all easy to tell apart (f03, f05).
+3. **Bug (f03):** hazard warning triangles can appear inside the HUD bar. One landed right on top of the lives icons in the top-right corner. They are only kept 18px from the edge.
+4. **Bug (f03):** orbs, the shield pickup and "+10" popups can also appear behind the HUD (top 60px). Orbs spawn from y=60, so a pickup up there is hard to see.
+5. **Menu (menu.png):** the floating background orbs show through the instruction text and make it look busy. The overlay is only 45% dark.
+6. **Menu (menu.png):** the "Press ENTER / SPACE or CLICK" prompt fades down to about 10% opacity, so in the screenshot it is almost invisible. That's the most important line on the screen.
+7. **Menu:** the floating orbs move by a fixed amount each frame, so they go twice as fast on 120 Hz screens.
+8. **Getting hit:** you only get screen shake and some particles. There's no strong full-screen signal, and the game over screen doesn't say what killed you.
+9. **Pacing:** the bot only reached 105 points in 50 seconds. Between orbs there's nothing to do except avoid things, and only the dash rewards taking risks.
+10. **Small gaps:** Esc pauses the game but isn't listed in the on-screen controls.
+
+## Changes made
+
+- **Fixes:** warnings, orbs, the shield pickup and popups now stay out of the HUD area.
+- **Menu:** a dark panel now sits behind the menu text, the start prompt stays clearly visible, and the floating orbs move at the same speed on any screen.
+- **New "graze" bonus:** passing very close to a hazard without being hit gives +2 points, a spark and a short sound, and keeps your combo going. This gives you a reason to take risks and play closer to the edge.
+- **Hit feedback:** a red flash covers the screen when you're hit. The game over screen now says what killed you ("Shredded by a spike mine", "Caught by a hunter", "Fried by a laser").
+- **Controls text:** Esc is now listed in the on-screen help.
+
+I haven't run the updated file myself. The `window.gameState` hook, the controls, losing and restarting work the same way as before.

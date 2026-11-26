@@ -1,0 +1,9 @@
+**Playtest notes**
+- It loads with no console errors, and the menu, input, scoring, losing and restarting all work. The `gameState` hook stays in sync.
+- The menu explains everything, and the neon look is readable. Pending hazards are telegraphed with "!" rings, which is fair.
+- The random bot lost after about 22s with only 1 point. Most of its lives went to missed orbs timing out, not to hazards.
+- Losing a life for every missed orb on top of the hazards is too harsh. It punishes a player who is dodging, and it makes the early game feel unfair.
+- The score target of 40 is far off for a casual run, but it is reachable.
+- Difficulty does ramp: hazard speed, spawn rate and chasers all increase.
+- Fix: a missed orb no longer costs a life. It breaks your combo and calls in an extra hazard, so ignoring orbs still has a cost. The menu text is updated to match.
+- The idle run never reached game over because it stayed on the menu. That is fine.

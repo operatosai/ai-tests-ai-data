@@ -1,0 +1,247 @@
+Below is a unified diff between two consecutive versions of a small HTML arcade game. Read ONLY the diff. List the player-visible features/mechanics ADDED and REMOVED (plain text, one short line each; ignore refactors). Then answer with a final line exactly: COUNTS added=<int> removed=<int>
+
+--- 
++++ 
+@@ -32,6 +32,9 @@
+   // ---------- Audio (generated) ----------
+-  let actx = null, muted = false;
++  let actx = null, master = null, muted = false;
+   function initAudio(){
+     if (!actx) {
+-      try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) { actx = null; }
++      try {
++        actx = new (window.AudioContext || window.webkitAudioContext)();
++        master = actx.createGain(); master.gain.value = 0.8; master.connect(actx.destination);
++      } catch(e) { actx = null; master = null; }
+     }
+@@ -39,6 +42,5 @@
+   }
+-  function tone(freq, dur, type, vol, slideTo){
+-    if (!actx || muted) return;
++  function toneAt(freq, t, dur, type, vol, slideTo){
++    if (!actx || !master || muted) return;
+     try {
+-      const t = actx.currentTime;
+       const o = actx.createOscillator(), g = actx.createGain();
+@@ -49,5 +51,9 @@
+       g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+-      o.connect(g); g.connect(actx.destination);
++      o.connect(g); g.connect(master);
+       o.start(t); o.stop(t + dur + 0.02);
+     } catch(e) {}
++  }
++  function tone(freq, dur, type, vol, slideTo){
++    if (!actx) return;
++    toneAt(freq, actx.currentTime, dur, type, vol, slideTo);
+   }
+@@ -59,2 +65,3 @@
+     power(){ [440,660,880].forEach((f,i)=>setTimeout(()=>tone(f,0.12,'triangle',0.12,f*1.5),i*60)); },
++    life(){ [523,784,1046,1318].forEach((f,i)=>setTimeout(()=>tone(f,0.14,'triangle',0.12,f*1.2),i*70)); },
+     warn(){ tone(160, 0.08, 'square', 0.04); },
+@@ -73,2 +80,23 @@
+   };
++
++  // ---------- Music (procedural, tempo rises with level) ----------
++  const music = { next: 0, step: 0 };
++  const BASS = [110, 87.31, 130.81, 98];
++  const CHORDS = [[220,261.6,329.6],[174.6,220,261.6],[261.6,329.6,392],[196,246.9,293.7]];
++  function musicTick(){
++    if (!actx || muted || state !== 'playing' || paused) { music.next = 0; return; }
++    const now = actx.currentTime;
++    const lv = Math.min(level || 1, 10);
++    const stepDur = 60 / (100 + lv*6) / 2;
++    if (music.next < now) music.next = now + 0.05;
++    while (music.next < now + 0.12) {
++      const s = music.step, t = music.next;
++      const c = Math.floor(s / 8) % 4;
++      if (s % 2 === 0) toneAt(BASS[c], t, stepDur*1.7, 'triangle', 0.07);
++      if (lv >= 2) toneAt(CHORDS[c][s % 3]*2, t, stepDur*0.8, 'square', 0.014);
++      if (lv >= 3 && s % 4 === 2) toneAt(6000, t, 0.03, 'square', 0.008);
++      if (lv >= 5 && s % 8 === 0) toneAt(70, t, 0.18, 'sine', 0.12, 40);
++      music.step++; music.next += stepDur;
++    }
++  }
+ 
+@@ -157,2 +185,3 @@
+     setState('playing');
++    music.step = 0; music.next = 0;
+     sfx.start();
+@@ -201,3 +230,3 @@
+       const big = Math.random() < 0.12;
+-      o = { x: rand(30, W-30), y: rand(TOP + 20, H-30), r: big ? 12 : 8, t: Math.random()*6, hue: rand(170, 300), big,
++      o = { x: rand(30, W-30), y: rand(TOP + 20, H-30), r: big ? 12 : 9, t: Math.random()*6, hue: rand(170, 300), big,
+             life: big ? 5 : rand(7, 10), born: 0, bonus: false };
+@@ -212,3 +241,3 @@
+       const a = a0 + i * Math.PI / 3;
+-      orbs.push({ x: cx + Math.cos(a)*R, y: cy + Math.sin(a)*R, r: 8, t: Math.random()*6, hue: 45 + i*8, big: false,
++      orbs.push({ x: cx + Math.cos(a)*R, y: cy + Math.sin(a)*R, r: 9, t: Math.random()*6, hue: 45 + i*8, big: false,
+                   life: 4.5, max: 4.5, born: -i*0.06, bonus: true });
+@@ -247,3 +276,2 @@
+     let tx = rand(W*0.2, W*0.8), ty = rand(TOP + (H-TOP)*0.2, TOP + (H-TOP)*0.8);
+-    // some mines aim straight at the player; campers always get targeted
+     const aimed = (still > 2) || Math.random() < Math.min(0.25 + level*0.03, 0.4);
+@@ -281,2 +309,3 @@
+       burst(player.x, player.y, 60, 60, 300);
++      ring(player.x, player.y, '120,255,120', 600, 0.8);
+       return true;
+@@ -291,2 +320,6 @@
+       deathCause = cause || '';
++      burst(player.x, player.y, 40, 50, 380);
++      ring(player.x, player.y, '255,90,90', 650, 0.8);
++      ring(player.x, player.y, '255,200,90', 350, 0.6);
++      shake = 18; flash = 0.7;
+       endGame('over');
+@@ -295,3 +328,2 @@
+     }
+-    // shockwave: shove nearby hazards away so the player isn't trapped
+     for (const h of hazards) {
+@@ -311,2 +343,4 @@
+   for (let i = 0; i < 14; i++) menuOrbs.push({ x: rand(0,W), y: rand(0,H), vx: rand(-30,30), vy: rand(-30,30), hue: rand(170,300), t: Math.random()*6 });
++  const stars = [];
++  for (let i = 0; i < 90; i++) stars.push({ x: rand(0,W), y: rand(0,H), z: rand(0.2,1), tw: rand(0,6) });
+ 
+@@ -373,3 +407,2 @@
+ 
+-    // orbs (magnet grows with the multiplier)
+     const magR = MAGNET * (1 + (mult() - 1) * 0.3);
+@@ -407,6 +440,7 @@
+ 
+-    // shield power-up
++    // power-ups: shield, or +1 life when hurt
+     powerTimer -= dt;
+     if (!power && powerTimer <= 0) {
+-      power = { x: rand(60, W-60), y: rand(TOP + 40, H-60), life: 7, t: 0 };
++      const kind = (lives < 3 && level >= 2 && Math.random() < 0.4) ? 'life' : 'shield';
++      power = { x: rand(60, W-60), y: rand(TOP + 40, H-60), life: 7, t: 0, kind };
+       powerTimer = rand(16, 24);
+@@ -416,6 +450,13 @@
+       if (dist(power, player) < player.r + 14) {
+-        shield = 5; sfx.power();
+-        popup(power.x, power.y - 14, 'SHIELD!', '#ffe36b', 20);
+-        burst(power.x, power.y, 50, 30, 220);
+-        ring(power.x, power.y, '255,227,107', 300, 0.4);
++        if (power.kind === 'life') {
++          lives = Math.min(3, lives + 1); sfx.life();
++          popup(power.x, power.y - 14, '+1 LIFE', '#7f9', 20);
++          burst(power.x, power.y, 130, 30, 220);
++          ring(power.x, power.y, '120,255,150', 300, 0.4);
++        } else {
++          shield = 5; sfx.power();
++          popup(power.x, power.y - 14, 'SHIELD!', '#ffe36b', 20);
++          burst(power.x, power.y, 50, 30, 220);
++          ring(power.x, power.y, '255,227,107', 300, 0.4);
++        }
+         power = null;
+@@ -424,3 +465,2 @@
+ 
+-    // lasers (level 4+)
+     if (level >= 4) {
+@@ -454,3 +494,2 @@
+ 
+-    // hazard warnings -> hazards
+     for (let i = pending.length-1; i >= 0; i--) {
+@@ -466,3 +505,2 @@
+ 
+-    // hazards
+     for (let i = hazards.length-1; i >= 0; i--) {
+@@ -490,3 +528,3 @@
+       }
+-      if (h.life < 0.5) continue; // fading out, harmless
++      if (h.life < 0.5) continue;
+       const hd = dist(h, player), hitR = h.r*0.8 + player.r;
+@@ -535,2 +573,15 @@
+   }
++  function drawStars(t){
++    const px = (player && state !== 'menu') ? (player.x - W/2) : 0;
++    const py = (player && state !== 'menu') ? (player.y - H/2) : 0;
++    for (const s of stars) {
++      let x = s.x - px*s.z*0.06 - t*8*s.z;
++      let y = s.y - py*s.z*0.06 + t*3*s.z;
++      x = ((x % W) + W) % W; y = ((y % H) + H) % H;
++      const a = (0.2 + 0.5*s.z) * (0.6 + 0.4*Math.sin(t*2 + s.tw));
++      ctx.fillStyle = `rgba(200,220,255,${a})`;
++      const sz = 0.8 + s.z*1.6;
++      ctx.fillRect(x, y, sz, sz);
++    }
++  }
+   function drawGrid(t){
+@@ -637,2 +688,11 @@
+     ctx.translate(p.x, p.y + Math.sin(p.t*4)*3);
++    if (p.kind === 'life') {
++      ctx.strokeStyle = 'rgba(120,255,150,0.6)'; ctx.lineWidth = 2;
++      ctx.beginPath(); ctx.arc(0,0,18 + Math.sin(p.t*6)*2,0,Math.PI*2); ctx.stroke();
++      ctx.shadowColor = '#4f8'; ctx.shadowBlur = 25;
++      ctx.fillStyle = '#7f9';
++      ctx.fillRect(-4, -11, 8, 22); ctx.fillRect(-11, -4, 22, 8);
++      ctx.restore();
++      return;
++    }
+     ctx.strokeStyle = 'rgba(255,227,107,0.6)'; ctx.lineWidth = 2;
+@@ -688,6 +748,6 @@
+   function drawLegend(t){
+-    const Y = 200, GAP_ICON = 7, GAP_ITEM = 26;
++    const Y = 200, GAP_ICON = 7, GAP_ITEM = 22;
+     const items = [
+       { w: 22, label: 'You', icon: x => { glowCircle(x+11, Y, 11, '#ffb627', 20); glowCircle(x+11, Y, 6, '#fff6d8', 4); } },
+-      { w: 18, label: 'Orb +10', icon: x => glowCircle(x+9, Y, 8, 'hsl(200,100%,62%)', 18) },
++      { w: 18, label: 'Orb +10', icon: x => glowCircle(x+9, Y, 9, 'hsl(200,100%,62%)', 22) },
+       { w: 24, label: 'Big +50', icon: x => glowCircle(x+12, Y, 12, 'hsl(280,100%,75%)', 25) },
+@@ -698,3 +758,4 @@
+         } },
+-      { w: 36, label: 'Shield', icon: x => drawPower({ x: x+18, y: Y, life: 9, t: t }, t) }
++      { w: 36, label: 'Shield', icon: x => drawPower({ x: x+18, y: Y, life: 9, t: t }, t) },
++      { w: 36, label: '+1 Life', icon: x => drawPower({ x: x+18, y: Y, life: 9, t: t, kind: 'life' }, t) }
+     ];
+@@ -720,2 +781,3 @@
+     if (shake > 0) ctx.translate(rand(-shake,shake), rand(-shake,shake));
++    drawStars(t);
+     drawGrid(t);
+@@ -732,11 +794,9 @@
+         const r = (o.r + Math.sin(o.t)*2) * grow;
+-        glowCircle(o.x, o.y, r, o.bonus ? `hsl(${o.hue},100%,62%)` : `hsl(${o.hue},100%,${o.big ? 75 : 62}%)`, o.big ? 35 : 22);
+-        glowCircle(o.x, o.y, r*0.4, '#fff', 5);
+-        if (o.big) {
+-          ctx.strokeStyle = `hsla(${o.hue},100%,80%,0.5)`; ctx.lineWidth = 2;
+-          ctx.beginPath(); ctx.arc(o.x, o.y, r + 6, -Math.PI/2, -Math.PI/2 + Math.PI*2*(o.life/o.max)); ctx.stroke();
+-        }
++        glowCircle(o.x, o.y, r, o.bonus ? `hsl(${o.hue},100%,62%)` : `hsl(${o.hue},100%,${o.big ? 75 : 64}%)`, o.big ? 35 : 26);
++        glowCircle(o.x, o.y, r*0.42, '#fff', 5);
++        ctx.strokeStyle = o.big ? `hsla(${o.hue},100%,80%,0.55)` : `hsla(${o.hue},100%,80%,0.35)`;
++        ctx.lineWidth = o.big ? 2 : 1.5;
++        ctx.beginPath(); ctx.arc(o.x, o.y, r + (o.big ? 6 : 5), -Math.PI/2, -Math.PI/2 + Math.PI*2*Math.max(0, o.life/o.max)); ctx.stroke();
+       }
+       if (power) drawPower(power, t);
+-      // hazards clipped to the playfield (they slide in from under the HUD)
+       ctx.save();
+@@ -782,3 +842,2 @@
+ 
+-    // hurt flash
+     if (flash > 0) {
+@@ -787,3 +846,3 @@
+       g.addColorStop(0, `rgba(255,30,30,${flash*0.25})`);
+-      g.addColorStop(1, `rgba(255,30,30,${flash*1.2})`);
++      g.addColorStop(1, `rgba(255,30,30,${Math.min(1, flash*1.2)})`);
+       ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+@@ -792,3 +851,2 @@
+ 
+-    // HUD
+     if (state === 'playing' || state === 'over' || state === 'won') {
+@@ -853,3 +911,3 @@
+       centerText('Red warning signs (!) mark incoming hazards. Purple ones hunt you. Lasers lv 4, darts lv 5.', 276, 15, '#9bc');
+-      centerText('Shield smashes hazards (+25). Dash through danger: +5. Graze close by: +2.', 300, 15, '#9bc');
++      centerText('Shield smashes hazards (+25). Green cross: +1 life. Dash through danger: +5. Graze: +2.', 300, 15, '#9bc');
+       centerText('Move: Arrow keys / WASD / ZQSD   or   hold mouse button to steer', 340, 17, '#dfe');
+@@ -857,3 +915,3 @@
+       centerText('3 lives  \u00b7  Reach ' + WIN_SCORE + ' points to win  \u00b7  P / Esc pause  \u00b7  M mute', 396, 15, '#9bc');
+-      centerText('Press ENTER / SPACE or CLICK to start', 462, 24, '#ff6', '#fa0', 0.7 + 0.3*Math.sin(t*4));
++      centerText('Press ENTER / SPACE or CLICK to start', 462, 26, '#ff6', '#fa0', 0.8 + 0.2*Math.sin(t*4));
+       if (best) centerText('Best: ' + best, 506, 16, '#9bc');
+@@ -867,3 +925,3 @@
+       centerText('Best: ' + best + '   \u00b7   Level reached: ' + level + '   \u00b7   Time: ' + Math.floor(elapsed) + 's   \u00b7   Grazes: ' + grazes, 336, 17, '#9bc');
+-      if (overTimer <= 0) centerText('Press ENTER / SPACE or CLICK to play again', 400, 22, '#ff6', '#fa0', 0.7 + 0.3*Math.sin(t*4));
++      if (overTimer <= 0) centerText('Press ENTER / SPACE or CLICK to play again', 400, 22, '#ff6', '#fa0', 0.8 + 0.2*Math.sin(t*4));
+     } else if (paused) {
+@@ -882,2 +940,3 @@
+     update(dt);
++    musicTick();
+     draw(now / 1000);

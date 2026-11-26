@@ -1,0 +1,24 @@
+## Playtest notes
+
+1. It works: the game loads, the menu is clear, input and score both respond, you can lose, restart works, the test hook is right and there are no console errors. All 8 checks passed.
+2. The menu (menu.png) looks good. It has a legend for every object, the controls, and the goal of 1000 points to win.
+3. **Bug:** hazards fly over the top bar. In f01.png a spike mine sits on the "Lives" icons, and in end.png another is over the score. Hazards bounce off the canvas edge at y=0, but orbs only spawn below the bar.
+4. **Same bug for the player:** your ship can move up into the top bar, where the score and combo text hide it.
+5. The combo text and its timer bar hang below the top bar, into the play area (y≈48–71). The playfield has no clear top edge.
+6. The bot only reached 96 points in 55 s. The orbs' pickup radius is tight, so you need to steer precisely. A little magnet pull would make collecting feel better without making the game easier to survive.
+7. Levels only add more and faster hazards, so a level-up brings nothing to look forward to, just more danger. It could use a reward moment.
+8. Orbs that fade out vanish with a tiny burst. That's fine, but you rarely see the big orbs (12% chance, 5 s life).
+9. Hazards and the player aren't drawn on the game-over screen, so you can't see what killed you. The cause of death text partly makes up for it.
+10. The page footer only mentions WASD, but the code also accepts ZQSD (useful on AZERTY keyboards).
+11. In the idle run the game stayed on the menu (it only starts on input), as expected.
+
+## Changes
+
+- I added a real playfield edge (`TOP`, with a line under the top bar). The player, hazards, lasers, orbs, warnings and the shield power-up all stay below it. Hazards coming in from the top are drawn clipped, so they slide in from under the bar.
+- I made the top bar smaller: the combo counter and its timer now sit next to the score bar, inside the bar.
+- Orbs near the player get pulled in slightly.
+- **Orb shower:** each level-up drops a ring of 6 short-lived bonus orbs, with their own message and sound.
+- Hazards stay visible, dimmed, behind the game-over screen, and a ring marks where you died.
+- The footer now mentions ZQSD.
+
+I haven't run the updated file or put it through the playtest bot again.

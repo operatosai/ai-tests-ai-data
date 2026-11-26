@@ -1,0 +1,216 @@
+Below is a unified diff between two consecutive versions of a small HTML arcade game. Read ONLY the diff. List the player-visible features/mechanics ADDED and REMOVED (plain text, one short line each; ignore refactors). Then answer with a final line exactly: COUNTS added=<int> removed=<int>
+
+--- 
++++ 
+@@ -15,3 +15,3 @@
+   <canvas id="c" width="800" height="560"></canvas>
+-  <div id="help">Move: Arrow keys / WASD, or hold the mouse button to steer &middot; Dash: Space / Shift / right-click &middot; P: pause &middot; M: mute</div>
++  <div id="help">Move: Arrow keys / WASD, or hold the mouse button to steer &middot; Dash: Space / Shift / right-click &middot; P / Esc: pause &middot; M: mute</div>
+ </div>
+@@ -24,2 +24,4 @@
+   const DASH_TIME = 0.16, DASH_CD = 1.1, DASH_SPEED = 920;
++  const HUD_H = 72;
++  const GRAZE = 20;
+ 
+@@ -60,2 +62,3 @@
+     dodge(){ tone(1200, 0.08, 'triangle', 0.08, 1800); },
++    graze(){ tone(1600, 0.05, 'sine', 0.05, 2200); },
+     over(){ tone(400,0.25,'triangle',0.2,200); setTimeout(()=>tone(260,0.5,'triangle',0.2,80),220); },
+@@ -115,3 +118,3 @@
+   let dashT, dashCd, dashDir, lastDir;
+-  let best = 0, overTimer = 0, newBest = false;
++  let best = 0, overTimer = 0, newBest = false, flash = 0, deathCause = '', grazes = 0;
+   try { best = parseInt(localStorage.getItem('orbrush_best') || '0', 10) || 0; } catch(e) { best = 0; }
+@@ -127,3 +130,3 @@
+     combo = 0; comboTimer = 0; invuln = 1.5; shield = 0; shake = 0; hitstop = 0; paused = false;
+-    levelBanner = 0; powerTimer = 14; laserTimer = 2; newBest = false;
++    levelBanner = 0; powerTimer = 14; laserTimer = 2; newBest = false; flash = 0; deathCause = ''; grazes = 0;
+     dashT = 0; dashCd = 0; dashDir = { x: 1, y: 0 }; lastDir = { x: 1, y: 0 };
+@@ -167,4 +170,3 @@
+     let d = inputDir();
+-    if (!d && mouse.x !== undefined) {
+-      // right-click / no input: dash toward cursor if meaningful, else last direction
++    if (!d) {
+       const mx = mouse.x - player.x, my = mouse.y - player.y, l = Math.hypot(mx, my);
+@@ -182,3 +184,3 @@
+       const big = Math.random() < 0.12;
+-      o = { x: rand(30, W-30), y: rand(60, H-30), r: big ? 12 : 8, t: Math.random()*6, hue: rand(170, 300), big,
++      o = { x: rand(30, W-30), y: rand(HUD_H + 14, H-30), r: big ? 12 : 8, t: Math.random()*6, hue: rand(170, 300), big,
+             life: big ? 5 : rand(7, 10), born: 0 };
+@@ -194,5 +196,5 @@
+       if (side === 0) { x = rand(20,W-20); y = -20; }
+-      else if (side === 1) { x = W+20; y = rand(20,H-20); }
++      else if (side === 1) { x = W+20; y = rand(HUD_H,H-20); }
+       else if (side === 2) { x = rand(20,W-20); y = H+20; }
+-      else { x = -20; y = rand(20,H-20); }
++      else { x = -20; y = rand(HUD_H,H-20); }
+       tries++;
+@@ -207,3 +209,3 @@
+     const homing = level >= 3 && Math.random() < Math.min(0.1 + level*0.04, 0.4);
+-    hazards.push({ x, y, vx: Math.cos(a)*speed, vy: Math.sin(a)*speed, r: rand(11, 17), rot: 0, spin: rand(-4,4), homing, speed, entering: true, life: rand(16, 26), dodged: false });
++    hazards.push({ x, y, vx: Math.cos(a)*speed, vy: Math.sin(a)*speed, r: rand(11, 17), rot: 0, spin: rand(-4,4), homing, speed, entering: true, life: rand(16, 26), dodged: false, grazed: false });
+   }
+@@ -223,3 +225,3 @@
+   function popup(x, y, txt, color, size){
+-    popups.push({ x, y, txt, color: color || '#fff', size: size || 16, life: 0.9, max: 0.9 });
++    popups.push({ x: clamp(x, 60, W-60), y: Math.max(y, HUD_H + 14), txt, color: color || '#fff', size: size || 16, life: 0.9, max: 0.9 });
+   }
+@@ -227,3 +229,2 @@
+ 
+-  // returns true if the game was won
+   function addScore(p){
+@@ -237,5 +238,4 @@
+   }
+-  // returns true if the game is over
+-  function hurt(){
+-    lives--; invuln = 1.6; shake = 12; combo = 0; comboTimer = 0; hitstop = 0.12;
++  function hurt(cause){
++    lives--; invuln = 1.6; shake = 12; combo = 0; comboTimer = 0; hitstop = 0.12; flash = 0.45;
+     burst(player.x, player.y, 0, 30, 260);
+@@ -243,2 +243,3 @@
+     if (lives <= 0) {
++      deathCause = cause || '';
+       endGame('over');
+@@ -251,2 +252,5 @@
+ 
++  let menuOrbs = [];
++  for (let i = 0; i < 14; i++) menuOrbs.push({ x: rand(0,W), y: rand(0,H), vx: rand(-30,30), vy: rand(-30,30), hue: rand(170,300), t: Math.random()*6 });
++
+   // ---------- Update ----------
+@@ -254,2 +258,8 @@
+     if (overTimer > 0) overTimer -= dt;
++    if (flash > 0) flash = Math.max(0, flash - dt);
++    if (state === 'menu') {
++      for (const o of menuOrbs) {
++        o.x = (o.x + o.vx*dt + W) % W; o.y = (o.y + o.vy*dt + H) % H; o.t += dt*3;
++      }
++    }
+     for (let i = particles.length-1; i >= 0; i--) {
+@@ -275,3 +285,2 @@
+ 
+-    // player movement
+     const d = inputDir();
+@@ -322,3 +331,3 @@
+     if (!power && powerTimer <= 0) {
+-      power = { x: rand(60, W-60), y: rand(80, H-60), life: 7, t: 0 };
++      power = { x: rand(60, W-60), y: rand(HUD_H + 30, H-60), life: 7, t: 0 };
+       powerTimer = rand(16, 24);
+@@ -341,3 +350,2 @@
+         if (level >= 7 && Math.random() < 0.4) {
+-          // crossed pair
+           const l2 = { horiz: !h, pos: !h ? clamp(player.y + rand(-80,80), 60, H-20) : clamp(player.x + rand(-100,100), 20, W-20), warn: 1.1, on: 0.35, w: 20, done: false };
+@@ -361,3 +369,3 @@
+         else if (dashT > 0) { l.done = true; sfx.dodge(); popup(player.x, player.y - 20, '+5 DODGE', '#9ff', 15); if (addScore(5)) return; }
+-        else if (invuln <= 0) { l.done = true; if (hurt()) return; }
++        else if (invuln <= 0) { l.done = true; if (hurt('Fried by a laser')) return; }
+       }
+@@ -399,3 +407,4 @@
+       if (h.life < 0.5) continue; // fading out, harmless
+-      if (dist(h, player) < h.r*0.8 + player.r) {
++      const hd = dist(h, player), hitR = h.r*0.8 + player.r;
++      if (hd < hitR) {
+         if (shield > 0) {
+@@ -410,3 +419,3 @@
+           if (!h.dodged) {
+-            h.dodged = true; sfx.dodge();
++            h.dodged = true; h.grazed = true; sfx.dodge();
+             popup(h.x, h.y - 12, '+5 DODGE', '#9ff', 15);
+@@ -417,3 +426,16 @@
+         if (safe) continue;
+-        if (hurt()) return;
++        if (hurt(h.homing ? 'Caught by a hunter' : 'Shredded by a spike mine')) return;
++      } else if (hd < hitR + GRAZE) {
++        // near miss: risk/reward
++        if (!h.grazed && !safe && shield <= 0) {
++          h.grazed = true; grazes++;
++          sfx.graze();
++          const mx = (h.x + player.x) / 2, my = (h.y + player.y) / 2;
++          burst(mx, my, 190, 6, 120);
++          popup(player.x, player.y - 22, 'GRAZE +2', '#aff', 13);
++          if (combo > 0) comboTimer = Math.min(2, comboTimer + 0.6);
++          if (addScore(2)) return;
++        }
++      } else if (hd > hitR + GRAZE + 40) {
++        h.grazed = false; h.dodged = false;
+       }
+@@ -457,3 +479,3 @@
+   function drawWarning(p, t){
+-    const x = clamp(p.x, 18, W-18), y = clamp(p.y, 18, H-18);
++    const x = clamp(p.x, 18, W-18), y = clamp(p.y, HUD_H + 4, H-18);
+     const pulse = 0.5 + 0.5*Math.sin(t*25);
+@@ -519,3 +541,2 @@
+     glowCircle(player.x, player.y, player.r*0.55, '#fff6d8', 6);
+-    // dash cooldown ring
+     if (dashCd > 0) {
+@@ -548,5 +569,2 @@
+ 
+-  let menuOrbs = [];
+-  for (let i = 0; i < 14; i++) menuOrbs.push({ x: rand(0,W), y: rand(0,H), vx: rand(-30,30), vy: rand(-30,30), hue: rand(170,300), t: Math.random()*6 });
+-
+   function draw(t){
+@@ -558,6 +576,3 @@
+     if (state === 'menu') {
+-      for (const o of menuOrbs) {
+-        o.x = (o.x + o.vx/60 + W) % W; o.y = (o.y + o.vy/60 + H) % H; o.t += 0.05;
+-        glowCircle(o.x, o.y, 7 + Math.sin(o.t)*2, `hsl(${o.hue},100%,65%)`, 20);
+-      }
++      for (const o of menuOrbs) glowCircle(o.x, o.y, 7 + Math.sin(o.t)*2, `hsl(${o.hue},100%,65%)`, 20);
+     } else {
+@@ -599,2 +614,12 @@
+     ctx.restore();
++
++    // hurt flash
++    if (flash > 0) {
++      ctx.save();
++      const g = ctx.createRadialGradient(W/2, H/2, H*0.25, W/2, H/2, H*0.85);
++      g.addColorStop(0, `rgba(255,30,30,${flash*0.25})`);
++      g.addColorStop(1, `rgba(255,30,30,${flash*1.2})`);
++      ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
++      ctx.restore();
++    }
+ 
+@@ -633,3 +658,2 @@
+       if (state === 'playing') {
+-        // dash meter bottom-left
+         const ready = dashCd <= 0;
+@@ -651,3 +675,5 @@
+       ctx.fillStyle = 'rgba(0,0,10,0.45)'; ctx.fillRect(0,0,W,H);
+-      centerText('ORB RUSH', 120, 72, '#6ff', '#0ff');
++      ctx.fillStyle = 'rgba(4,6,18,0.82)'; ctx.fillRect(40, 168, W-80, 252);
++      ctx.strokeStyle = 'rgba(80,160,220,0.25)'; ctx.lineWidth = 1; ctx.strokeRect(40.5, 168.5, W-81, 251);
++      centerText('ORB RUSH', 110, 72, '#6ff', '#0ff');
+       glowCircle(W/2 - 250, 200, 11, '#ffb627', 20); glowCircle(W/2 - 250, 200, 6, '#fff6d8', 4);
+@@ -670,18 +696,19 @@
+ 
+-      centerText('Collect glowing orbs before they fade. Chain pickups for up to x4 points.', 252, 17, '#cde');
+-      centerText('A red  !  warns of incoming hazards. Purple ones hunt you. Lasers from level 4.', 280, 15, '#9bc');
+-      centerText('Gold shield smashes hazards (+25). Dashing through danger: +5.', 304, 15, '#9bc');
+-      centerText('Move: Arrow keys / WASD   or   hold mouse button to steer', 346, 17, '#dfe');
+-      centerText('DASH (brief invincibility): Space / Shift / right-click', 372, 17, '#9ff');
+-      centerText('3 lives  \u00b7  Reach ' + WIN_SCORE + ' points to win  \u00b7  P pause  \u00b7  M mute', 400, 15, '#9bc');
+-      centerText('Press ENTER / SPACE or CLICK to start', 458, 24, '#ff6', '#fa0', 0.55 + 0.45*Math.sin(t*4));
+-      if (best) centerText('Best: ' + best, 504, 16, '#9bc');
++      centerText('Collect glowing orbs before they fade. Chain pickups for up to x4 points.', 248, 17, '#cde');
++      centerText('A red  !  warns of incoming hazards. Purple ones hunt you. Lasers from level 4.', 276, 15, '#9bc');
++      centerText('Shield smashes hazards (+25). Dash through danger: +5. Graze close by: +2.', 300, 15, '#9bc');
++      centerText('Move: Arrow keys / WASD   or   hold mouse button to steer', 340, 17, '#dfe');
++      centerText('DASH (brief invincibility): Space / Shift / right-click', 366, 17, '#9ff');
++      centerText('3 lives  \u00b7  Reach ' + WIN_SCORE + ' points to win  \u00b7  P / Esc pause  \u00b7  M mute', 396, 15, '#9bc');
++      centerText('Press ENTER / SPACE or CLICK to start', 462, 24, '#ff6', '#fa0', 0.7 + 0.3*Math.sin(t*4));
++      if (best) centerText('Best: ' + best, 506, 16, '#9bc');
+     } else if (state === 'over' || state === 'won') {
+       ctx.fillStyle = 'rgba(0,0,10,0.6)'; ctx.fillRect(0,0,W,H);
+-      if (state === 'over') centerText('GAME OVER', 190, 64, '#f55', '#f00');
+-      else centerText('YOU WIN!', 190, 64, '#6f6', '#0f0');
+-      centerText('Score: ' + score, 262, 30, '#fff');
+-      if (newBest) centerText('NEW BEST!', 300, 20, '#ffe36b', '#fa0', 0.6 + 0.4*Math.sin(t*6));
+-      centerText('Best: ' + best + '   \u00b7   Level reached: ' + level + '   \u00b7   Time: ' + Math.floor(elapsed) + 's', 334, 17, '#9bc');
+-      if (overTimer <= 0) centerText('Press ENTER / SPACE or CLICK to play again', 400, 22, '#ff6', '#fa0', 0.55 + 0.45*Math.sin(t*4));
++      if (state === 'over') centerText('GAME OVER', 180, 64, '#f55', '#f00');
++      else centerText('YOU WIN!', 180, 64, '#6f6', '#0f0');
++      if (state === 'over' && deathCause) centerText(deathCause, 226, 17, '#f99');
++      centerText('Score: ' + score, 266, 30, '#fff');
++      if (newBest) centerText('NEW BEST!', 302, 20, '#ffe36b', '#fa0', 0.6 + 0.4*Math.sin(t*6));
++      centerText('Best: ' + best + '   \u00b7   Level reached: ' + level + '   \u00b7   Time: ' + Math.floor(elapsed) + 's   \u00b7   Grazes: ' + grazes, 336, 17, '#9bc');
++      if (overTimer <= 0) centerText('Press ENTER / SPACE or CLICK to play again', 400, 22, '#ff6', '#fa0', 0.7 + 0.3*Math.sin(t*4));
+     } else if (paused) {

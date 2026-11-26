@@ -1,0 +1,11 @@
+Make a small, complete arcade game as ONE self-contained HTML file (HTML + CSS + JavaScript inline). No external assets, no network, no libraries, no images or audio files: draw everything with canvas or CSS, any sound must be generated in code.
+
+Theme: the player collects glowing orbs while avoiding hazards, and it gets harder over time.
+
+Requirements:
+- Starts on a title/menu screen and the player starts it with a key or a click.
+- Keyboard and/or mouse controls, explained on screen.
+- A visible score. The player can lose (game over screen) and restart without reloading the page.
+- Test hook (needed for automated testing, keep it always up to date): window.gameState = { score: <number>, state: "menu" | "playing" | "over" | "won" }.
+
+Answer with the complete HTML file in a single ```html code block. You may write a few words before it.

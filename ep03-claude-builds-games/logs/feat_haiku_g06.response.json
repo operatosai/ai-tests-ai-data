@@ -1,0 +1,103 @@
+{
+ "duration_api_ms": 7228,
+ "stop_reason": "end_turn",
+ "session_id": "4dbd380a-9daf-49e0-aea2-117871bde124",
+ "total_cost_usd": 0.0010557000000000001,
+ "usage": {
+  "input_tokens": 2,
+  "cache_creation_input_tokens": 1835,
+  "cache_read_input_tokens": 0,
+  "output_tokens": 1377,
+  "output_tokens_details": {
+   "thinking_tokens": 1216
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 1835,
+   "ephemeral_5m_input_tokens": 0
+  },
+  "inference_geo": "global",
+  "iterations": [
+   {
+    "input_tokens": 2,
+    "output_tokens": 1377,
+    "cache_read_input_tokens": 0,
+    "cache_creation_input_tokens": 1835,
+    "cache_creation": {
+     "ephemeral_5m_input_tokens": 0,
+     "ephemeral_1h_input_tokens": 1835
+    },
+    "type": "message"
+   }
+  ],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "modelUsage": {
+  "claude-haiku-5-5": {
+   "inputTokens": 2,
+   "outputTokens": 1377,
+   "cacheReadInputTokens": 0,
+   "cacheCreationInputTokens": 1835,
+   "webSearchRequests": 0,
+   "costUSD": 0.0010557000000000001,
+   "contextWindow": 1000000,
+   "maxOutputTokens": 128000,
+   "thinkingTokens": 1216,
+   "cacheCreationEphemeral5mInputTokens": 0,
+   "cacheCreationEphemeral1hInputTokens": 1835,
+   "canonicalModel": "claude-haiku-5-5",
+   "provider": "firstParty",
+   "costBasis": "list"
+  }
+ },
+ "permission_denials": [],
+ "terminal_reason": "completed",
+ "fast_mode_state": "off",
+ "fast_mode_disabled_reason": "sdk_opt_in_required",
+ "subagent_stats": {
+  "spawned": 0,
+  "requested": {
+   "background": 0,
+   "foreground": 0,
+   "unset": 0
+  },
+  "started_in_background": 0,
+  "max_depth": 0,
+  "spawned_by_subagents": 0,
+  "completed": 0,
+  "failed": 0,
+  "killed": {
+   "parent": 0,
+   "user": 0,
+   "system": 0
+  },
+  "refused": {
+   "depth_limit": 0,
+   "concurrency_limit": 0,
+   "budget": 0
+  },
+  "by_type": {}
+ },
+ "safety_stops": 0,
+ "is_error": false,
+ "num_turns": 1,
+ "subtype": "success",
+ "api_error_status": null,
+ "result": "ADDED:\n- \"ALMOST THERE!\" popup with a danger sound, shown once per run when the score is within 10 of the win score\n\nREMOVED:\n- (none)\n\nNot counted as added or removed, since they are tuning changes to existing mechanics: combo window 1.5s \u2192 2.0s, orb target 5 \u2192 6 with faster respawn, starting orbs 4 \u2192 5, larger orbs that last longer, brighter orb glow.\n\nCOUNTS added=1 removed=0",
+ "ttft_ms": 6753,
+ "type": "result",
+ "duration_ms": 7397,
+ "uuid": "196c552e-a1a2-4c2a-bf72-6d8b92a081a5",
+ "ttft_stream_ms": 842,
+ "time_to_request_ms": 157,
+ "first_content_frame_ms": 842,
+ "queued_turn_count": 0,
+ "result_index": 0,
+ "credential_expires_at": "2026-12-12T04:36:10.496Z",
+ "_wall_seconds": 8.256030082702637
+}

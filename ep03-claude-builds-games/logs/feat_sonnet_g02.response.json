@@ -1,0 +1,103 @@
+{
+ "duration_api_ms": 9869,
+ "stop_reason": "end_turn",
+ "session_id": "b114523f-84cf-4a32-b497-2ebb68937e40",
+ "total_cost_usd": 0.0020326,
+ "usage": {
+  "input_tokens": 2,
+  "cache_creation_input_tokens": 5667,
+  "cache_read_input_tokens": 0,
+  "output_tokens": 1798,
+  "output_tokens_details": {
+   "thinking_tokens": 1611
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 5667,
+   "ephemeral_5m_input_tokens": 0
+  },
+  "inference_geo": "global",
+  "iterations": [
+   {
+    "input_tokens": 2,
+    "output_tokens": 1798,
+    "cache_read_input_tokens": 0,
+    "cache_creation_input_tokens": 5667,
+    "cache_creation": {
+     "ephemeral_5m_input_tokens": 0,
+     "ephemeral_1h_input_tokens": 5667
+    },
+    "type": "message"
+   }
+  ],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "modelUsage": {
+  "claude-haiku-5-5": {
+   "inputTokens": 2,
+   "outputTokens": 1798,
+   "cacheReadInputTokens": 0,
+   "cacheCreationInputTokens": 5667,
+   "webSearchRequests": 0,
+   "costUSD": 0.0020326,
+   "contextWindow": 1000000,
+   "maxOutputTokens": 128000,
+   "thinkingTokens": 1611,
+   "cacheCreationEphemeral5mInputTokens": 0,
+   "cacheCreationEphemeral1hInputTokens": 5667,
+   "canonicalModel": "claude-haiku-5-5",
+   "provider": "firstParty",
+   "costBasis": "list"
+  }
+ },
+ "permission_denials": [],
+ "terminal_reason": "completed",
+ "fast_mode_state": "off",
+ "fast_mode_disabled_reason": "sdk_opt_in_required",
+ "subagent_stats": {
+  "spawned": 0,
+  "requested": {
+   "background": 0,
+   "foreground": 0,
+   "unset": 0
+  },
+  "started_in_background": 0,
+  "max_depth": 0,
+  "spawned_by_subagents": 0,
+  "completed": 0,
+  "failed": 0,
+  "killed": {
+   "parent": 0,
+   "user": 0,
+   "system": 0
+  },
+  "refused": {
+   "depth_limit": 0,
+   "concurrency_limit": 0,
+   "budget": 0
+  },
+  "by_type": {}
+ },
+ "safety_stops": 0,
+ "is_error": false,
+ "num_turns": 1,
+ "subtype": "success",
+ "api_error_status": null,
+ "result": "ADDED\n- Floating popups for +1, +\u2665, and MISSED -\u2665\n- Level-up flash on the LEVEL label, with a chime\n- Right-click starts a dash\n- Dashing makes the player immune to spike hits\n- Larger glow while dashing\n- Right-click context menu is suppressed on the game canvas\n\nREMOVED\n- Expiring orbs no longer fail harmlessly; a missed orb costs a life\n- Top strip of the arena (above y=80) no longer used for orb or spike spawns\n\nCOUNTS added=6 removed=2",
+ "ttft_ms": 9289,
+ "type": "result",
+ "duration_ms": 10075,
+ "uuid": "3488d950-35c8-4cbe-a221-dba13681077b",
+ "ttft_stream_ms": 935,
+ "time_to_request_ms": 233,
+ "first_content_frame_ms": 935,
+ "queued_turn_count": 0,
+ "result_index": 0,
+ "credential_expires_at": "2026-12-12T04:36:10.496Z",
+ "_wall_seconds": 11.152762651443481
+}

@@ -1,0 +1,67 @@
+Below is a unified diff between two consecutive versions of a small HTML arcade game. Read ONLY the diff. List the player-visible features/mechanics ADDED and REMOVED (plain text, one short line each; ignore refactors). Then answer with a final line exactly: COUNTS added=<int> removed=<int>
+
+--- 
++++ 
+@@ -41,2 +41,5 @@
+   const FADE_IN = 0.8;        // hazards are harmless until fully faded in
++  const FADE_OUT = 1.0;       // chasers are harmless for the last second of their life
++  const SEEKER_LIFE = 18;     // seconds a chaser stays before burning out
++  const SEEKER_SPAWN_OFF = 60; // chasers appear this far off-screen so their warning is visible
+   const SHIELD_TIME = 4;      // seconds of shield from a violet orb
+@@ -88,2 +91,3 @@
+   const multiplier = () => Math.min(4, 1 + Math.floor((Math.max(combo, 1) - 1) / 4));
++  const hazardAlpha = h => Math.max(0, Math.min(1, h.age / FADE_IN, (h.life - h.age) / 0.8));
+   const fmtTime = s => {
+@@ -176,8 +180,9 @@
+     if (type === 'seeker') {
+-      // Seekers enter from outside the screen so they never pop in next to the player
++      // Seekers enter from well outside the screen so their warning marker is visible
++      // for a moment before they arrive, and they never pop in next to the player
+       const side = Math.floor(Math.random() * 4);
+-      if (side === 0) { x = -24; y = randRange(0, H); }
+-      else if (side === 1) { x = W + 24; y = randRange(0, H); }
+-      else if (side === 2) { x = randRange(0, W); y = -24; }
+-      else { x = randRange(0, W); y = H + 24; }
++      if (side === 0) { x = -SEEKER_SPAWN_OFF; y = randRange(0, H); }
++      else if (side === 1) { x = W + SEEKER_SPAWN_OFF; y = randRange(0, H); }
++      else if (side === 2) { x = randRange(0, W); y = -SEEKER_SPAWN_OFF; }
++      else { x = randRange(0, W); y = H + SEEKER_SPAWN_OFF; }
+     } else {
+@@ -200,2 +205,3 @@
+       age: 0,
++      life: type === 'seeker' ? SEEKER_LIFE : Infinity, // chasers burn out; others stay
+       near: false,             // true while the player is inside its close-call range
+@@ -312,2 +318,3 @@
+     paused = false;
++    newBest = score > best && score > 0;
+     best = Math.max(best, score);
+@@ -409,2 +416,4 @@
+     }
++    // Chasers burn out after their lifetime so the field never silts up with them
++    hazards = hazards.filter(h => h.age < h.life);
+ 
+@@ -448,3 +457,4 @@
+       const h = hazards[i];
+-      if (h.age < FADE_IN) continue;
++      // Harmless while fading in or out
++      if (h.age < FADE_IN || h.age > h.life - FADE_OUT) continue;
+       const d = dist(h.x, h.y, player.x, player.y);
+@@ -570,3 +580,3 @@
+     ctx.save();
+-    ctx.globalAlpha = Math.min(1, h.age / FADE_IN);
++    ctx.globalAlpha = hazardAlpha(h);
+     // Telegraph: a dashed aim line and a pulsing ring while winding up
+@@ -606,3 +616,3 @@
+     ctx.save();
+-    ctx.globalAlpha = Math.min(1, h.age / FADE_IN);
++    ctx.globalAlpha = hazardAlpha(h);
+     ctx.translate(h.x, h.y);
+@@ -631,3 +641,3 @@
+       ctx.save();
+-      ctx.globalAlpha = Math.min(1, h.age / FADE_IN);
++      ctx.globalAlpha = hazardAlpha(h);
+       ctx.translate(h.x, h.y);
+@@ -845,2 +855,3 @@
+     text(`Orbs collected: ${stats.orbs}   Hazards smashed: ${stats.smashed}`, W / 2, 345, 16, '#8ff');
++    if (newBest) glowText('NEW BEST!', W / 2, 382, 24, '#ffd23f');
+     if (cooldown <= 0) {

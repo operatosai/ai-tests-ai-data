@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Orb Rush</title>
+<style>
+  html, body {
+    margin: 0; height: 100%; background: #05060f;
+    display: flex; align-items: center; justify-content: center;
+    font-family: "Segoe UI", Arial, sans-serif; color: #cfe;
+    overflow: hidden;
+  }
+  #wrap { position: relative; }
+  canvas {
+    display: block; background: radial-gradient(circle at 50% 40%, #101a3a, #04050d 75%);
+    border: 2px solid #234; border-radius: 10px;
+    box-shadow: 0 0 40px #0af4; max-width: 100vw; max-height: 100vh;
+    cursor: crosshair;
+  }
+</style>
+</head>
+<body>
+<div id="wrap"><canvas id="c" width="800" height="600"></canvas></div>
+<script>
+(() => {
+  const cv = document.getElementById('c');
+  const ctx = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+  const WIN_SCORE = 60;
+
+  // ---- Test hook ----
+  window.gameState = { score: 0, state: "menu" };
+  function sync() { window.gameState.score = score; window.gameState.state = state; }
+
+  // ---- Audio (generated) ----
+  let actx = null;
+  function audio() {
+    if (!actx) { try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
+    if (actx && actx.state === 'suspended') actx.resume();
+  }
+  function beep(freq, dur, type = 'sine', vol = 0.15, slide = 0) {
+    if (!actx) return;
+    const t = actx.currentTime;
+    const o = actx.createOscillator(), g = actx.createGain();
+    o.type = type; o.frequency.setValueAtTime(freq, t);
+    if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(30, freq + slide), t + dur);
+    g.gain.setValueAtTime(vol, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(actx.destination);
+    o.start(t); o.stop(t + dur + 0.02);
+  }
+
+  // ---- Input ----
+  const keys = {};
+  let mouse = { x: W / 2, y: H / 2, active: false };
+  window.addEventListener('keydown', e => {
+    keys[e.code] = true;
+    if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code)) e.preventDefault();
+    if ((e.code === 'Space' || e.code === 'Enter') && state !== 'playing') { audio(); startGame(); }
+    if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyW','KeyA','KeyS','KeyD'].includes(e.code)) mouse.active = false;
+  });
+  window.addEventListener('keyup', e => { keys[e.code] = false; });
+  function toCanvas(e) {
+    const r = cv.getBoundingClientRect();
+    return { x: (e.clientX - r.left) * W / r.width, y: (e.clientY - r.top) * H / r.height };
+  }
+  cv.addEventListener('mousemove', e => { const p = toCanvas(e); mouse.x = p.x; mouse.y = p.y; mouse.active = true; });
+  cv.addEventListener('mousedown', e => {
+    audio();
+    const p = toCanvas(e); mouse.x = p.x; mouse.y = p.y;
+    if (state !== 'playing') { startGame(); }
+    mouse.active = true;
+  });
+
+  // ---- Game state ----
+  let state = 'menu', score = 0, lives = 3, best = 0;
+  let player, orbs, hazards, particles, elapsed, spawnTimer, invuln, shake, level;
+
+  function resetWorld() {
+    player = { x: W / 2, y: H / 2, r: 13, vx: 0, vy: 0 };
+    orbs = []; hazards = []; particles = [];
+    elapsed = 0; spawnTimer = 2; invuln = 0; shake = 0; level = 1;
+    for (let i = 0; i < 3; i++) spawnOrb();
+    for (let i = 0; i < 2; i++) spawnHazard();
+  }
+  function startGame() {
+    score = 0; lives = 3;
+    resetWorld();
+    state = 'playing'; sync();
+    beep(440, 0.1, 'square', 0.1); setTimeout(() => beep(660, 0.15, 'square', 0.1), 90);
+  }
+  function endGame(won) {
+    state = won ? 'won' : 'over';
+    best = Math.max(best, score);
+    sync();
+    if (won) [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => beep(f, 0.25, 'triangle', 0.15), i * 120));
+    else beep(300, 0.8, 'sawtooth', 0.15, -250);
+  }
+
+  function rand(a, b) { return a + Math.random() * (b - a); }
+  function farFromPlayer(minD) {
+    let x, y, tries = 0;
+    do { x = rand(30, W - 30); y = rand(30, H - 30); tries++; }
+    while (Math.hypot(x - player.x, y - player.y) < minD && tries < 50);
+    return { x, y };
+  }
+  function spawnOrb() {
+    const p = farFromPlayer(90);
+    orbs.push({ x: p.x, y: p.y, r: 9, t: Math.random() * 6, hue: rand(150, 210), golden: Math.random() < 0.1 });
+  }
+  function spawnHazard() {
+    // spawn from an edge
+    const side = Math.floor(Math.random() * 4);
+    let x, y;
+    if (side === 0) { x = rand(0, W); y = -20; }
+    else if (side === 1) { x = W + 20; y = rand(0, H); }
+    else if (side === 2) { x = rand(0, W); y = H + 20; }
+    else { x = -20; y = rand(0, H); }
+    const speed = rand(90, 130) + elapsed * 2.2;
+    const a = Math.atan2(player.y - y, player.x - x) + rand(-0.6, 0.6);
+    const seeker = elapsed > 25 && Math.random() < Math.min(0.35, elapsed / 200);
+    hazards.push({ x, y, vx: Math.cos(a) * speed, vy: Math.sin(a) * speed, r: rand(11, 17), rot: 0, entering: true, seeker, speed });
+  }
+  function burst(x, y, color, n, spd) {
+    for (let i = 0; i < n; i++) {
+      const a = Math.random() * Math.PI * 2, s = rand(spd * 0.3, spd);
+      particles.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: rand(0.4, 0.9), max: 0.9, color });
+    }
+  }
+
+  // ---- Update ----
+  function update(dt) {
+    if (state !== 'playing') {
+      particles.forEach(p => { p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt; });
+      particles = particles.filter(p => p.life > 0);
+      return;
+    }
+    elapsed += dt;
+    level = 1 + Math.floor(elapsed / 15);
+    if (invuln > 0) invuln -= dt;
+    if (shake > 0) shake -= dt;
+
+    // player movement
+    const accel = 1800, maxS = 330;
+    let ix = 0, iy = 0;
+    if (keys.ArrowLeft || keys.KeyA) ix -= 1;
+    if (keys.ArrowRight || keys.KeyD) ix += 1;
+    if (keys.ArrowUp || keys.KeyW) iy -= 1;
+    if (keys.ArrowDown || keys.KeyS) iy += 1;
+    if (ix || iy) {
+      const l = Math.hypot(ix, iy); player.vx += ix / l * accel * dt; player.vy += iy / l * accel * dt;
+    } else if (mouse.active) {
+      const dx = mouse.x - player.x, dy = mouse.y - player.y, d = Math.hypot(dx, dy);
+      if (d > 4) { const want = Math.min(maxS, d * 6); player.vx += (dx / d * want - player.vx) * Math.min(1, 10 * dt); player.vy += (dy / d * want - player.vy) * Math.min(1, 10 * dt); }
+      else { player.vx *= 0.8; player.vy *= 0.8; }
+    }
+    if (!(ix || iy) && !mouse.active) { player.vx *= Math.pow(0.002, dt); player.vy *= Math.pow(0.002, dt); }
+    const sp = Math.hypot(player.vx, player.vy);
+    if (sp > maxS) { player.vx *= maxS / sp; player.vy *= maxS / sp; }
+    player.x = Math.max(player.r, Math.min(W - player.r, player.x + player.vx * dt));
+    player.y = Math.max(player.r, Math.min(H - player.r, player.y + player.vy * dt));
+    if (Math.random() < 0.6) particles.push({ x: player.x + rand(-4, 4), y: player.y + rand(-4, 4), vx: -player.vx * 0.2, vy: -player.vy * 0.2, life: 0.35, max: 0.35, color: '#6ff' });
+
+    // orbs
+    for (let i = orbs.length - 1; i >= 0; i--) {
+      const o = orbs[i]; o.t += dt;
+      if (Math.hypot(o.x - player.x, o.y - player.y) < o.r + player.r) {
+        const pts = o.golden ? 3 : 1;
+        score += pts;
+        burst(o.x, o.y, o.golden ? '#fd4' : `hsl(${o.hue},100%,65%)`, o.golden ? 30 : 16, 220);
+        beep(o.golden ? 1200 : 700 + (score % 8) * 60, 0.12, 'triangle', 0.12, 300);
+        orbs.splice(i, 1);
+        spawnOrb();
+        if (score >= WIN_SCORE) { sync(); endGame(true); return; }
+      }
+    }
+    const targetOrbs = Math.min(6, 3 + Math.floor(elapsed / 30));
+    while (orbs.length < targetOrbs) spawnOrb();
+
+    // hazard spawning: more & faster over time
+    spawnTimer -= dt;
+    const maxHaz = Math.min(22, 2 + Math.floor(elapsed / 6));
+    if (spawnTimer <= 0) {
+      if (hazards.length < maxHaz) spawnHazard();
+      spawnTimer = Math.max(0.6, 3 - elapsed * 0.04);
+    }
+
+    // hazards
+    for (const h of hazards) {
+      if (h.seeker) {
+        const a = Math.atan2(player.y - h.y, player.x - h.x);
+        h.vx += Math.cos(a) * 140 * dt; h.vy += Math.sin(a) * 140 * dt;
+        const s = Math.hypot(h.vx, h.vy), cap = h.speed * 0.85;
+        if (s > cap) { h.vx *= cap / s; h.vy *= cap / s; }
+      }
+      h.x += h.vx * dt; h.y += h.vy * dt; h.rot += dt * 3;
+      if (h.entering) {
+        if (h.x > h.r && h.x < W - h.r && h.y > h.r && h.y < H - h.r) h.entering = false;
+      } else {
+        if (h.x < h.r) { h.x = h.r; h.vx = Math.abs(h.vx); }
+        if (h.x > W - h.r) { h.x = W - h.r; h.vx = -Math.abs(h.vx); }
+        if (h.y < h.r) { h.y = h.r; h.vy = Math.abs(h.vy); }
+        if (h.y > H - h.r) { h.y = H - h.r; h.vy = -Math.abs(h.vy); }
+      }
+      if (invuln <= 0 && Math.hypot(h.x - player.x, h.y - player.y) < h.r * 0.85 + player.r) {
+        lives--; invuln = 2; shake = 0.35;
+        burst(player.x, player.y, '#f44', 40, 300);
+        beep(160, 0.4, 'sawtooth', 0.2, -100);
+        // push hazard away
+        const a = Math.atan2(h.y - player.y, h.x - player.x);
+        const s = Math.hypot(h.vx, h.vy); h.vx = Math.cos(a) * s; h.vy = Math.sin(a) * s;
+        if (lives <= 0) { sync(); endGame(false); return; }
+      }
+    }
+
+    particles.forEach(p => { p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt; p.vx *= 0.96; p.vy *= 0.96; });
+    particles = particles.filter(p => p.life > 0);
+    sync();
+  }
+
+  // ---- Draw ----
+  let bgT = 0;
+  const stars = Array.from({ length: 90 }, () => ({ x: Math.random() * W, y: Math.random() * H, s: Math.random() * 1.6 + 0.3, tw: Math.random() * 6 }));
+
+  function drawBg(dt) {
+    bgT += dt;
+    for (const s of stars) {
+      ctx.globalAlpha = 0.35 + 0.35 * Math.sin(bgT * 2 + s.tw);
+      ctx.fillStyle = '#9cf';
+      ctx.fillRect(s.x, s.y, s.s, s.s);
+    }
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = 'rgba(80,140,255,0.06)'; ctx.lineWidth = 1;
+    for (let x = 0; x < W; x += 40) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+    for (let y = 0; y < H; y += 40) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+  }
+  function glowCircle(x, y, r, color, blur) {
+    ctx.save(); ctx.shadowColor = color; ctx.shadowBlur = blur; ctx.fillStyle = color;
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+  }
+  function drawOrb(o) {
+    const pulse = 1 + Math.sin(o.t * 5) * 0.15;
+    const col = o.golden ? '#ffd23f' : `hsl(${o.hue},100%,60%)`;
+    const g = ctx.createRadialGradient(o.x, o.y, 0, o.x, o.y, o.r * 3 * pulse);
+    g.addColorStop(0, o.golden ? 'rgba(255,220,80,0.5)' : `hsla(${o.hue},100%,60%,0.45)`);
+    g.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(o.x, o.y, o.r * 3 * pulse, 0, Math.PI * 2); ctx.fill();
+    glowCircle(o.x, o.y, o.r * pulse, col, 20);
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    ctx.beginPath(); ctx.arc(o.x - o.r * 0.3, o.y - o.r * 0.3, o.r * 0.35, 0, Math.PI * 2); ctx.fill();
+  }
+  function drawHazard(h) {
+    ctx.save(); ctx.translate(h.x, h.y); ctx.rotate(h.rot);
+    ctx.shadowColor = h.seeker ? '#f0f' : '#f33'; ctx.shadowBlur = 18;
+    ctx.fillStyle = h.seeker ? '#c2f' : '#e22';
+    ctx.beginPath();
+    const spikes = 8;
+    for (let i = 0; i < spikes * 2; i++) {
+      const rr = i % 2 ? h.r * 0.55 : h.r * 1.15, a = i * Math.PI / spikes;
+      i ? ctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr) : ctx.moveTo(rr, 0);
+    }
+    ctx.closePath(); ctx.fill();
+    ctx.shadowBlur = 0; ctx.fillStyle = '#300';
+    ctx.beginPath(); ctx.arc(0, 0, h.r * 0.3, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  }
+  function drawPlayer() {
+    if (invuln > 0 && Math.floor(invuln * 12) % 2 === 0) return;
+    glowCircle(player.x, player.y, player.r, '#4ff', 25);
+    ctx.fillStyle = '#e8ffff';
+    ctx.beginPath(); ctx.arc(player.x, player.y, player.r * 0.5, 0, Math.PI * 2); ctx.fill();
+  }
+  function text(str, x, y, size, color, align = 'center', glow = 0) {
+    ctx.save(); ctx.font = `bold ${size}px "Segoe UI", Arial, sans-serif`;
+    ctx.textAlign = align; ctx.textBaseline = 'middle'; ctx.fillStyle = color;
+    if (glow) { ctx.shadowColor = color; ctx.shadowBlur = glow; }
+    ctx.fillText(str, x, y); ctx.restore();
+  }
+  function drawHUD() {
+    text(`Score: ${score}`, 20, 26, 22, '#bff', 'left', 8);
+    text(`Level ${level}`, W / 2, 26, 18, '#9ae', 'center');
+    text(`Goal: ${WIN_SCORE}`, W / 2, 48, 13, '#678', 'center');
+    for (let i = 0; i < 3; i++) {
+      ctx.globalAlpha = i < lives ? 1 : 0.2;
+      glowCircle(W - 30 - i * 26, 26, 8, '#4ff', i < lives ? 12 : 0);
+    }
+    ctx.globalAlpha = 1;
+  }
+  function overlay() { ctx.fillStyle = 'rgba(2,4,12,0.65)'; ctx.fillRect(0, 0, W, H); }
+  function drawMenu() {
+    // decorative orbs
+    for (let i = 0; i < 6; i++) {
+      const a = bgT * 0.6 + i * Math.PI / 3;
+      drawOrb({ x: W / 2 + Math.cos(a) * 230, y: 210 + Math.sin(a) * 70, r: 9, t: bgT + i, hue: 150 + i * 12, golden: i === 0 });
+    }
+    text('ORB RUSH', W / 2, 200, 72, '#5ff', 'center', 30);
+    text('Collect glowing orbs. Dodge the red spikes.', W / 2, 300, 20, '#cde');
+    text('Move: Arrow keys / WASD   or   move the mouse (ship follows the cursor)', W / 2, 340, 16, '#9bd');
+    text('Golden orbs = 3 points  •  Purple spikes hunt you  •  3 lives', W / 2, 368, 16, '#9bd');
+    text(`Reach ${WIN_SCORE} points to win. It gets harder every few seconds!`, W / 2, 396, 16, '#9bd');
+    if (Math.floor(bgT * 2) % 2 === 0) text('Click or press SPACE / ENTER to start', W / 2, 470, 24, '#ff6', 'center', 12);
+    if (best) text(`Best: ${best}`, W / 2, 520, 16, '#8ab');
+  }
+  function drawEnd(won) {
+    overlay();
+    text(won ? 'YOU WIN!' : 'GAME OVER', W / 2, 220, 64, won ? '#6f8' : '#f55', 'center', 25);
+    text(`Score: ${score}`, W / 2, 300, 30, '#eef');
+    text(`Best: ${best}   •   Survived ${elapsed.toFixed(1)}s`, W / 2, 342, 18, '#9bd');
+    if (Math.floor(bgT * 2) % 2 === 0) text('Click or press SPACE / ENTER to play again', W / 2, 430, 22, '#ff6', 'center', 10);
+  }
+
+  function draw(dt) {
+    ctx.clearRect(0, 0, W, H);
+    ctx.save();
+    if (shake > 0) ctx.translate(rand(-6, 6) * shake * 3, rand(-6, 6) * shake * 3);
+    drawBg(dt);
+    if (state !== 'menu') {
+      orbs.forEach(drawOrb);
+      hazards.forEach(drawHazard);
+      if (state === 'playing') drawPlayer();
+    }
+    for (const p of particles) {
+      ctx.globalAlpha = Math.max(0, p.life / p.max);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(p.x - 2, p.y - 2, 4, 4);
+    }
+    ctx.globalAlpha = 1;
+    ctx.restore();
+    if (state === 'menu') drawMenu();
+    else {
+      drawHUD();
+      if (state === 'over') drawEnd(false);
+      if (state === 'won') drawEnd(true);
+    }
+  }
+
+  // ---- Loop ----
+  let last = performance.now();
+  function loop(now) {
+    const dt = Math.min(0.05, (now - last) / 1000); last = now;
+    update(dt);
+    draw(dt);
+    requestAnimationFrame(loop);
+  }
+  resetWorld();
+  sync();
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

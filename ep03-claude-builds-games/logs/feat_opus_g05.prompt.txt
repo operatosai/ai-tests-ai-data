@@ -1,0 +1,287 @@
+Below is a unified diff between two consecutive versions of a small HTML arcade game. Read ONLY the diff. List the player-visible features/mechanics ADDED and REMOVED (plain text, one short line each; ignore refactors). Then answer with a final line exactly: COUNTS added=<int> removed=<int>
+
+--- 
++++ 
+@@ -15,3 +15,3 @@
+   <canvas id="c" width="800" height="560"></canvas>
+-  <div id="help">Move: Arrow keys / WASD / ZQSD, or hold the mouse button to steer &middot; Dash: Space / Shift / right-click &middot; P / Esc: pause &middot; M: mute</div>
++  <div id="help">Move: Arrow keys / WASD / ZQSD, or hold the mouse button to steer &middot; Dash: Space / Shift / right-click &middot; Touch: drag to steer, double-tap to dash &middot; P / Esc: pause &middot; M: mute</div>
+ </div>
+@@ -27,2 +27,3 @@
+   const MAGNET = 70;
++  const MAX_PARTICLES = 700;
+ 
+@@ -59,2 +60,3 @@
+     warn(){ tone(160, 0.08, 'square', 0.04); },
++    dartWarn(){ tone(900, 0.25, 'square', 0.035, 1400); },
+     charge(){ tone(180, 1.0, 'sine', 0.05, 700); },
+@@ -64,2 +66,3 @@
+     graze(){ tone(1600, 0.05, 'sine', 0.05, 2200); },
++    multi(){ tone(660,0.08,'square',0.08,990); setTimeout(()=>tone(990,0.14,'square',0.08,1480),70); },
+     over(){ tone(400,0.25,'triangle',0.2,200); setTimeout(()=>tone(260,0.5,'triangle',0.2,80),220); },
+@@ -74,2 +77,4 @@
+   const mouse = { x: W/2, y: H/2, down: false };
++  const touches = new Set();
++  let lastTap = 0;
+   window.addEventListener('keydown', e => {
+@@ -94,3 +99,3 @@
+     for (const k in keys) keys[k] = false;
+-    mouse.down = false;
++    mouse.down = false; touches.clear();
+     if (state === 'playing') paused = true;
+@@ -108,2 +113,9 @@
+     if (e.button === 2) { tryDash(); return; }
++    if (e.pointerType === 'touch') {
++      touches.add(e.pointerId);
++      if (touches.size >= 2) { tryDash(); return; }
++      const now = performance.now();
++      if (now - lastTap < 280) tryDash();
++      lastTap = now;
++    }
+     mouse.down = true;
+@@ -111,4 +123,7 @@
+   });
+-  window.addEventListener('pointerup', e => { if (e.button !== 2) mouse.down = false; });
+-  window.addEventListener('pointercancel', () => { mouse.down = false; });
++  window.addEventListener('pointerup', e => {
++    if (e.pointerType === 'touch') { touches.delete(e.pointerId); mouse.down = touches.size > 0; return; }
++    if (e.button !== 2) mouse.down = false;
++  });
++  window.addEventListener('pointercancel', e => { touches.delete(e.pointerId); mouse.down = touches.size > 0; });
+   cv.addEventListener('contextmenu', e => e.preventDefault());
+@@ -117,3 +132,3 @@
+   let state = 'menu', paused = false;
+-  let player, orbs, hazards, pending, particles, popups, trail, power, lasers;
++  let player, orbs, hazards, pending, particles, popups, trail, power, lasers, rings;
+   let score, lives, elapsed, level, spawnTimer, combo, comboTimer, invuln, shield, shake, hitstop, levelBanner, powerTimer, laserTimer;
+@@ -128,3 +143,3 @@
+     player = { x: W/2, y: (H + TOP)/2, r: 12, speed: 285 };
+-    orbs = []; hazards = []; pending = []; particles = []; popups = []; trail = []; power = null; lasers = [];
++    orbs = []; hazards = []; pending = []; particles = []; popups = []; trail = []; power = null; lasers = []; rings = [];
+     setScore(0);
+@@ -135,3 +150,3 @@
+     for (let i = 0; i < 5; i++) spawnOrb();
+-    for (let i = 0; i < 2; i++) queueHazard();
++    for (let i = 0; i < 3; i++) queueHazard();
+   }
+@@ -149,3 +164,3 @@
+     setState(s); overTimer = 0.8;
+-    mouse.down = false; dashT = 0;
++    mouse.down = false; dashT = 0; touches.clear();
+   }
+@@ -213,6 +228,19 @@
+     } while (player && Math.hypot(x-player.x, y-player.y) < 220 && tries < 20);
+-    pending.push({ x, y, t: 0.85, max: 0.85 });
+-    sfx.warn();
+-  }
+-  function spawnHazardAt(x, y){
++    const dart = level >= 5 && Math.random() < Math.min(0.2 + (level-5)*0.05, 0.4);
++    if (dart) {
++      const a = Math.atan2(player.y + rand(-40,40) - y, player.x + rand(-40,40) - x);
++      pending.push({ x, y, t: 1.0, max: 1.0, dart: true, a });
++      sfx.dartWarn();
++    } else {
++      pending.push({ x, y, t: 0.85, max: 0.85 });
++      sfx.warn();
++    }
++  }
++  function spawnHazardAt(p){
++    const x = p.x, y = p.y;
++    if (p.dart) {
++      const speed = 380 + level * 12;
++      hazards.push({ x, y, vx: Math.cos(p.a)*speed, vy: Math.sin(p.a)*speed, r: 9, rot: 0, spin: 0, homing: false, dart: true, speed, entering: true, life: 6, dodged: false, grazed: false });
++      return;
++    }
+     const speed = rand(90, 130) + level * 14;
+@@ -221,3 +249,3 @@
+     const homing = level >= 3 && Math.random() < Math.min(0.1 + level*0.04, 0.4);
+-    hazards.push({ x, y, vx: Math.cos(a)*speed, vy: Math.sin(a)*speed, r: rand(11, 17), rot: 0, spin: rand(-4,4), homing, speed, entering: true, life: rand(16, 26), dodged: false, grazed: false });
++    hazards.push({ x, y, vx: Math.cos(a)*speed, vy: Math.sin(a)*speed, r: rand(11, 17), rot: 0, spin: rand(-4,4), homing, dart: false, speed, entering: true, life: rand(16, 26), dodged: false, grazed: false });
+   }
+@@ -231,2 +259,3 @@
+   function burst(x, y, hue, n, spd){
++    if (particles.length > MAX_PARTICLES) n = Math.min(n, 3);
+     for (let i = 0; i < n; i++) {
+@@ -235,2 +264,5 @@
+     }
++  }
++  function ring(x, y, color, spd, life){
++    rings.push({ x, y, r: 8, spd: spd || 400, life: life || 0.5, max: life || 0.5, color: color || '255,255,255' });
+   }
+@@ -260,2 +292,12 @@
+     }
++    // shockwave: shove nearby hazards away so the player isn't trapped
++    for (const h of hazards) {
++      const dd = dist(h, player);
++      if (dd < 150 && dd > 0.01 && !h.dart) {
++        const s = Math.max(h.speed, Math.hypot(h.vx, h.vy));
++        h.vx = (h.x - player.x) / dd * s; h.vy = (h.y - player.y) / dd * s;
++        h.x += (h.x - player.x) / dd * 12; h.y += (h.y - player.y) / dd * 12;
++      }
++    }
++    ring(player.x, player.y, '255,90,90', 420, 0.45);
+     popup(player.x, player.y - 20, lives === 1 ? 'LAST LIFE!' : '-1 life', '#f77', 18);
+@@ -285,2 +327,6 @@
+     }
++    for (let i = rings.length-1; i >= 0; i--) {
++      const r = rings[i]; r.r += r.spd*dt; r.life -= dt;
++      if (r.life <= 0) rings.splice(i,1);
++    }
+     if (shake > 0) shake = Math.max(0, shake - dt*30);
+@@ -294,2 +340,3 @@
+       level = newLevel; levelBanner = 1.6; sfx.level(); burst(W/2, TOP + 10, 50, 20, 200);
++      ring(player.x, player.y, '255,227,107', 500, 0.6);
+       orbShower();
+@@ -297,2 +344,3 @@
+       if (level === 4) popup(W/2, H/2 - 30, 'Lasers incoming! Dash through them.', '#f88', 20);
++      if (level === 5) popup(W/2, H/2 - 30, 'Darts! Watch the orange lines.', '#fb6', 20);
+     }
+@@ -332,2 +380,3 @@
+       if (od < o.r + player.r + 2 && o.born > 0) {
++        const prevM = mult();
+         combo++; comboTimer = 2;
+@@ -338,2 +387,7 @@
+         if (o.big) sfx.big(); else sfx.orb(combo);
++        if (m > prevM) {
++          popup(player.x, player.y - 40, 'x' + m + ' MULTIPLIER!', '#ff6', 22);
++          ring(player.x, player.y, '255,255,110', 380, 0.4);
++          setTimeout(sfx.multi, 90);
++        }
+         orbs.splice(i,1);
+@@ -360,2 +414,3 @@
+         burst(power.x, power.y, 50, 30, 220);
++        ring(power.x, power.y, '255,227,107', 300, 0.4);
+         power = null;
+@@ -397,5 +452,5 @@
+       pending[i].t -= dt;
+-      if (pending[i].t <= 0) { spawnHazardAt(pending[i].x, pending[i].y); pending.splice(i,1); }
+-    }
+-    const target = 2 + Math.floor(elapsed / 6);
++      if (pending[i].t <= 0) { spawnHazardAt(pending[i]); pending.splice(i,1); }
++    }
++    const target = 3 + Math.floor(elapsed / 5.5);
+     spawnTimer -= dt;
+@@ -403,3 +458,3 @@
+       queueHazard();
+-      spawnTimer = Math.max(0.45, 2 - level*0.15);
++      spawnTimer = Math.max(0.45, 1.8 - level*0.15);
+     }
+@@ -410,3 +465,3 @@
+       h.life -= dt;
+-      if (h.life <= 0) { burst(h.x, h.y, h.homing ? 290 : 0, 8, 80); hazards.splice(i,1); continue; }
++      if (h.life <= 0) { burst(h.x, h.y, h.dart ? 30 : (h.homing ? 290 : 0), 8, 80); hazards.splice(i,1); continue; }
+       if (h.homing) {
+@@ -418,4 +473,8 @@
+       h.x += h.vx*dt; h.y += h.vy*dt; h.rot += h.spin*dt;
+-      if (h.entering) {
+-        if (h.x > h.r && h.x < W-h.r && h.y > TOP + h.r && h.y < H-h.r) h.entering = false;
++      const inside = h.x > h.r && h.x < W-h.r && h.y > TOP + h.r && h.y < H-h.r;
++      if (h.dart) {
++        if (h.entering) { if (inside) h.entering = false; }
++        else if (h.x < -h.r*2 || h.x > W + h.r*2 || h.y < TOP - h.r*2 || h.y > H + h.r*2) { hazards.splice(i,1); continue; }
++      } else if (h.entering) {
++        if (inside) h.entering = false;
+       } else {
+@@ -432,3 +491,3 @@
+           popup(h.x, h.y - 10, '+25 SMASH', '#ffb', 16);
+-          burst(h.x, h.y, h.homing ? 290 : 0, 22, 240);
++          burst(h.x, h.y, h.dart ? 30 : (h.homing ? 290 : 0), 22, 240);
+           sfx.smash(); shake = 5;
+@@ -446,3 +505,3 @@
+         if (safe) continue;
+-        if (hurt(h.homing ? 'Caught by a hunter' : 'Shredded by a spike mine')) return;
++        if (hurt(h.dart ? 'Pierced by a dart' : h.homing ? 'Caught by a hunter' : 'Shredded by a spike mine')) return;
+       } else if (hd < hitR + GRAZE) {
+@@ -473,6 +532,13 @@
+     ctx.save();
+-    ctx.strokeStyle = 'rgba(60,120,200,0.07)'; ctx.lineWidth = 1;
+-    const off = (t*10) % 40;
++    const hue = (210 + ((level || 1) - 1) * 32) % 360;
++    ctx.strokeStyle = `hsla(${hue},70%,55%,0.08)`; ctx.lineWidth = 1;
++    const off = (t*(10 + ((level||1)-1)*2)) % 40;
+     for (let x = -40 + off; x < W; x += 40) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+     for (let y = -40 + off; y < H; y += 40) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
++    if (state !== 'menu') {
++      const g = ctx.createRadialGradient(W/2, H/2, 50, W/2, H/2, H*0.8);
++      g.addColorStop(0, `hsla(${hue},80%,40%,0.08)`);
++      g.addColorStop(1, 'rgba(0,0,0,0)');
++      ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
++    }
+     ctx.restore();
+@@ -482,3 +548,16 @@
+     if (h.life !== undefined && h.life < 1) ctx.globalAlpha = Math.max(0, h.life) * (0.6 + 0.4*Math.sin(h.life*40));
+-    ctx.translate(h.x, h.y); ctx.rotate(h.rot);
++    ctx.translate(h.x, h.y);
++    if (h.dart) {
++      ctx.rotate(Math.atan2(h.vy, h.vx));
++      ctx.shadowColor = '#f80'; ctx.shadowBlur = 18;
++      ctx.fillStyle = '#ff8a1e';
++      ctx.beginPath();
++      ctx.moveTo(h.r*1.9, 0); ctx.lineTo(-h.r, h.r*0.85); ctx.lineTo(-h.r*0.4, 0); ctx.lineTo(-h.r, -h.r*0.85);
++      ctx.closePath(); ctx.fill();
++      ctx.shadowBlur = 0; ctx.fillStyle = 'rgba(255,170,60,0.35)';
++      ctx.fillRect(-h.r*3.5, -2, h.r*3, 4);
++      ctx.restore();
++      return;
++    }
++    ctx.rotate(h.rot);
+     ctx.shadowColor = h.homing ? '#f0f' : '#f33'; ctx.shadowBlur = 15;
+@@ -498,2 +577,11 @@
+   function drawWarning(p, t){
++    if (p.dart) {
++      ctx.save();
++      ctx.beginPath(); ctx.rect(0, TOP, W, H - TOP); ctx.clip();
++      const k = 1 - p.t / p.max;
++      ctx.strokeStyle = `rgba(255,150,40,${0.2 + 0.5*k})`;
++      ctx.lineWidth = 2 + k*2; ctx.setLineDash([8, 8]); ctx.lineDashOffset = -t*140;
++      ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x + Math.cos(p.a)*1400, p.y + Math.sin(p.a)*1400); ctx.stroke();
++      ctx.restore();
++    }
+     const x = clamp(p.x, 18, W-18), y = clamp(p.y, TOP + 16, H-18);
+@@ -503,4 +591,4 @@
+     ctx.translate(x, y);
+-    ctx.shadowColor = '#f33'; ctx.shadowBlur = 15;
+-    ctx.fillStyle = '#f44';
++    ctx.shadowColor = p.dart ? '#f80' : '#f33'; ctx.shadowBlur = 15;
++    ctx.fillStyle = p.dart ? '#ff9a2e' : '#f44';
+     ctx.beginPath(); ctx.moveTo(0,-13); ctx.lineTo(12,9); ctx.lineTo(-12,9); ctx.closePath(); ctx.fill();
+@@ -599,2 +687,3 @@
+       if (state === 'playing') for (const l of lasers) if (l.warn > 0) drawLaser(l, t);
++      if (state === 'playing') for (const p of pending) if (p.dart) drawWarning(p, t);
+       for (const o of orbs) {
+@@ -619,3 +708,3 @@
+       if (state === 'playing') {
+-        for (const p of pending) drawWarning(p, t);
++        for (const p of pending) if (!p.dart) drawWarning(p, t);
+         drawPlayer(t);
+@@ -628,2 +717,10 @@
+       }
++    }
++    for (const r of rings) {
++      ctx.save();
++      ctx.globalAlpha = Math.max(0, r.life / r.max);
++      ctx.strokeStyle = `rgb(${r.color})`; ctx.lineWidth = 3;
++      ctx.shadowColor = `rgb(${r.color})`; ctx.shadowBlur = 12;
++      ctx.beginPath(); ctx.arc(r.x, r.y, r.r, 0, Math.PI*2); ctx.stroke();
++      ctx.restore();
+     }
+@@ -717,6 +814,7 @@
+       ctx.restore();
+-      drawHazard({ x: W/2 + 65, y: 200, r: 12, rot: t, homing: false });
+-      drawHazard({ x: W/2 + 95, y: 200, r: 12, rot: -t, homing: true });
++      drawHazard({ x: W/2 + 52, y: 200, r: 11, rot: t, homing: false });
++      drawHazard({ x: W/2 + 78, y: 200, r: 11, rot: -t, homing: true });
++      drawHazard({ x: W/2 + 102, y: 200, r: 7, vx: 1, vy: 0, dart: true });
+       ctx.save(); ctx.font = 'bold 15px system-ui,Arial,sans-serif'; ctx.fillStyle = '#dfe'; ctx.textBaseline = 'middle';
+-      ctx.fillText('Avoid', W/2 + 114, 200);
++      ctx.fillText('Avoid', W/2 + 122, 200);
+       ctx.restore();
+@@ -728,6 +826,6 @@
+       centerText('Collect glowing orbs before they fade. Chain pickups for up to x4 points.', 248, 17, '#cde');
+-      centerText('A red  !  warns of incoming hazards. Purple ones hunt you. Lasers from level 4.', 276, 15, '#9bc');
++      centerText('A  !  warns of incoming hazards. Purple ones hunt you. Lasers lv 4, darts lv 5.', 276, 15, '#9bc');
+       centerText('Shield smashes hazards (+25). Dash through danger: +5. Graze close by: +2.', 300, 15, '#9bc');
+       centerText('Move: Arrow keys / WASD / ZQSD   or   hold mouse button to steer', 340, 17, '#dfe');
+-      centerText('DASH (brief invincibility): Space / Shift / right-click', 366, 17, '#9ff');
++      centerText('DASH (brief invincibility): Space / Shift / right-click / double-tap', 366, 17, '#9ff');
+       centerText('3 lives  \u00b7  Reach ' + WIN_SCORE + ' points to win  \u00b7  P / Esc pause  \u00b7  M mute', 396, 15, '#9bc');

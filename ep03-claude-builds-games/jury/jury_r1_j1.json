@@ -1,0 +1,69 @@
+[
+ {
+  "G38": {
+   "clarity": 5,
+   "polish": 5,
+   "feel": 4,
+   "depth": 4,
+   "appeal": 4
+  },
+  "G86": {
+   "clarity": 5,
+   "polish": 5,
+   "feel": 4,
+   "depth": 4,
+   "appeal": 4
+  },
+  "G74": {
+   "clarity": 7,
+   "polish": 7,
+   "feel": 6,
+   "depth": 5,
+   "appeal": 6
+  },
+  "G50": {
+   "clarity": 5,
+   "polish": 6,
+   "feel": 5,
+   "depth": 4,
+   "appeal": 4
+  },
+  "G92": {
+   "clarity": 6,
+   "polish": 6,
+   "feel": 5,
+   "depth": 6,
+   "appeal": 5
+  },
+  "G25": {
+   "clarity": 5,
+   "polish": 6,
+   "feel": 5,
+   "depth": 4,
+   "appeal": 5
+  },
+  "G89": {
+   "clarity": 5,
+   "polish": 5,
+   "feel": 4,
+   "depth": 4,
+   "appeal": 4
+  }
+ },
+ {
+  "G23": {
+   "clarity": 5,
+   "polish": 6,
+   "feel": 4,
+   "depth": 4,
+   "appeal": 4
+  },
+  "G75": {
+   "clarity": 1,
+   "polish": 1,
+   "feel": 1,
+   "depth": 1,
+   "appeal": 1
+  }
+ }
+]

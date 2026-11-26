@@ -1,0 +1,111 @@
+Below is a unified diff between two consecutive versions of a small HTML arcade game. Read ONLY the diff. List the player-visible features/mechanics ADDED and REMOVED (plain text, one short line each; ignore refactors). Then answer with a final line exactly: COUNTS added=<int> removed=<int>
+
+--- 
++++ 
+@@ -35,2 +35,5 @@
+   const HAZARD_HIT = 13;      // collision radius for hazards
++  const CLOSE_RANGE = 18;     // extra distance that counts as a close call
++  const CLOSE_BONUS = 2;      // points for a close call
++  const CLOSE_COOLDOWN = 1.5; // seconds before the same hazard can grant another close call
+   const PLAYER_SPEED = 330;   // px/s
+@@ -112,2 +115,3 @@
+     smash: () => tone(330, 0.18, 'square', 0.1, 60),
++    close: () => tone(1400, 0.07, 'sine', 0.06, 1800),
+     hit: () => tone(220, 0.5, 'sawtooth', 0.18, 40),
+@@ -162,3 +166,4 @@
+       dir: Math.random() < 0.5 ? -1 : 1,
+-      age: 0
++      age: 0,
++      closeCd: 0
+     });
+@@ -204,2 +209,3 @@
+     state = 'over';
++    paused = false;
+     best = Math.max(best, score);
+@@ -215,2 +221,3 @@
+     state = 'won';
++    paused = false;
+     best = Math.max(best, score);
+@@ -227,4 +234,9 @@
+ 
++  function pauseIfPlaying() {
++    if (state === 'playing') paused = true;
++  }
++
+   function onPress() {
+     if (state === 'menu') startGame();
++    else if (state === 'playing' && paused) paused = false;   // any press resumes from pause
+     else if ((state === 'over' || state === 'won') && cooldown <= 0) startGame();
+@@ -282,2 +294,3 @@
+       h.age += dt;
++      h.closeCd = Math.max(0, h.closeCd - dt);
+       h.spin += dt * (h.type === 'seeker' ? 3 : 1.5) * h.dir;
+@@ -323,3 +336,5 @@
+ 
+-    // Hazard collisions: shield smashes them, otherwise they are lethal once faded in
++    // Hazard collisions: shield smashes them, otherwise they are lethal once faded in.
++    // Passing close (without touching) earns a small near-miss bonus.
++    const reach = HAZARD_HIT + PLAYER_HIT;
+     for (let i = hazards.length - 1; i >= 0; i--) {
+@@ -327,3 +342,4 @@
+       if (h.age < FADE_IN) continue;
+-      if (dist(h.x, h.y, player.x, player.y) < HAZARD_HIT + PLAYER_HIT) {
++      const d = dist(h.x, h.y, player.x, player.y);
++      if (d < reach) {
+         if (shieldT > 0) {
+@@ -339,2 +355,7 @@
+         }
++      } else if (shieldT <= 0 && grace <= 0 && d < reach + CLOSE_RANGE && h.closeCd <= 0) {
++        h.closeCd = CLOSE_COOLDOWN;
++        score += CLOSE_BONUS;
++        popups.push({ x: player.x, y: player.y - 18, text: `CLOSE +${CLOSE_BONUS}`, life: 0.8, rgb: '255,255,255' });
++        sfx.close();
+       }
+@@ -527,2 +548,9 @@
+   function drawHUD() {
++    // Backing band so the text stays readable over hazards and orbs
++    const band = ctx.createLinearGradient(0, 0, 0, 90);
++    band.addColorStop(0, 'rgba(5,6,13,0.75)');
++    band.addColorStop(1, 'rgba(5,6,13,0)');
++    ctx.fillStyle = band;
++    ctx.fillRect(0, 0, W, 90);
++
+     ctx.save();
+@@ -572,5 +600,5 @@
+     glowText('ORB RUNNER', W / 2, 110, 64, '#5ff0ff');
+-    text('Collect glowing orbs to score. Gold is worth 5.', W / 2, 190, 17, '#cfe');
++    text('Collect glowing orbs to score. Gold is worth 5 (x combo).', W / 2, 190, 17, '#cfe');
+     text('Chain pickups quickly for a combo multiplier (up to x4).', W / 2, 216, 17, '#cfe');
+-    text('Dodge red hazards. They multiply and speed up over time.', W / 2, 242, 17, '#cfe');
++    text('Dodge spinning hazards. Skim past them for a close-call bonus.', W / 2, 242, 17, '#cfe');
+     text('Violet orbs grant a shield that smashes hazards for points.', W / 2, 268, 17, '#cbb8ff');
+@@ -580,3 +608,3 @@
+     text('Move: Arrow keys / WASD, or move the mouse', W / 2, 370, 16);
+-    text('Pause: P or Esc', W / 2, 398, 16);
++    text('Pause: P or Esc (pauses automatically when you leave the tab)', W / 2, 398, 16);
+     text('Start / restart: Enter, Space, or click', W / 2, 426, 16);
+@@ -620,3 +648,3 @@
+     glowText('PAUSED', W / 2, H / 2 - 10, 48, '#5ff0ff');
+-    text('Press P or Esc to resume', W / 2, H / 2 + 40, 18, '#cfe');
++    text('Press P or Esc, or click, to resume', W / 2, H / 2 + 40, 18, '#cfe');
+   }
+@@ -669,3 +697,5 @@
+     }
+-    if ((e.code === 'KeyP' || e.code === 'Escape') && !e.repeat) togglePause();
++    if ((e.code === 'KeyP' || e.code === 'Escape') && !e.repeat) {
++      if (state === 'playing') togglePause();
++    }
+   });
+@@ -677,4 +707,12 @@
+ 
++  // Leaving the window pauses the game so the player is never killed while away
+   window.addEventListener('blur', () => {
+     for (const k in keys) keys[k] = false;
++    pauseIfPlaying();
++  });
++  document.addEventListener('visibilitychange', () => {
++    if (document.hidden) {
++      for (const k in keys) keys[k] = false;
++      pauseIfPlaying();
++    }
+   });

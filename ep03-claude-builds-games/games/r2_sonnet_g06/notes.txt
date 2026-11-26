@@ -1,0 +1,13 @@
+**Playtest notes**
+- It loads cleanly, with no console errors. It runs at about 60 fps, and the `gameState` hook stays in sync.
+- Menu, play, game over and restart all work. The bot reached game over at about 8s and restarted without a reload.
+- The menu explains everything: controls, orb types, hazards, dash, pause and mute.
+- Hazards are readable. A pulsing "!" warns before each one spawns, and purple chasers add variety.
+- The first 10–15 seconds are harsh for a random bot. It scored 0–1 and lost lives mostly to expired orbs, not spikes.
+- Losing a life when an orb expires, on top of spike hits, makes early deaths feel unfair. The bot died at 8s with a score of 0.
+- Orbs expire while the player is still dodging three early spikes. The early spike pressure is slightly high.
+- The "LIVES" heart row sits right above the dash bar. The row is cramped and easy to misread.
+- The game has no real difficulty ramp problem. Spike speed and spawn rate grow, but the early game needs more grace.
+- Sound, particles, combos, golden orbs and pause are all good. I kept them.
+
+**Changes:** I gave the player 4 lives and made orbs last longer early on. The first spikes now spawn later, and spawning ramps up more gently. I moved the dash bar so it no longer crowds the hearts.

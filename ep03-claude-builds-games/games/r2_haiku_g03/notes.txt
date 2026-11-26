@@ -1,0 +1,16 @@
+**Playtest notes**
+
+1. **Works:** the page loads with no console errors, the frame rate holds near 60 fps (302 frames in 5 s), and the test hook is present.
+2. **Works:** the menu is clear and readable, and the HUD (score, time, best, danger, goal bar) reads well over the playfield.
+3. **Works:** the bot started, scored, died at 34 s, and restarted, so the core loop holds together.
+4. **Gap:** the win path (reaching 50) was never exercised by the bot, so it is untested.
+5. **Gap:** the "idle" run never started, so it says nothing about hazards or timeouts. It stayed on the menu, which is fine but uninformative.
+6. **Boring after ~30 s:** bouncers (max 240 px/s) and seekers (max 150 px/s) are both slower than the player (330 px/s). Difficulty only rises through count and speed, so the real pressure is just corners. A threat that can outpace the player is needed.
+7. **Unclear ramp:** the danger level goes up silently. Nothing tells the player the game just got harder.
+8. **Readability:** in f03, hazards pass under the "DANGER" label in the top band and crowd the text.
+9. **Missing:** there is no mute, so the sound effects become tiresome over a long session.
+10. **Missing:** the game-over screen does not flag a new best score, which removes some of the reason to retry.
+11. **Possible exploit (not verified):** the close-call bonus could be farmed by a slow bouncer hovering near the player.
+12. **Feel:** the combo window (1.5 s) is invisible apart from the text, so players cannot tell how much time is left.
+
+**Changes in this version:** a new telegraphed "dasher" hazard (lime, flashes a warning line, then lunges faster than the player), a "DANGER n" popup at each level-up, an M-key mute with a HUD indicator, a "NEW BEST!" flag on the game-over screen, and an updated menu with the new controls. Everything else is unchanged, and `window.gameState` still reports `score` and `state`.

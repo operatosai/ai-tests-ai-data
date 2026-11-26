@@ -1,0 +1,13 @@
+**Playtest notes**
+
+1. **Works:** the page loads with no console errors, the menu renders and reads clearly, input changes the screen, score moves, the game can be lost, and restart works without a reload.
+2. **Works:** the test hook stays in sync (score and state each frame), and the HUD (score, time, best, danger, goal bar) is readable.
+3. **Broken or unfair:** the bot died at 16 s with a score of 1, and the screenshots show why. Bouncers spawn up to 180 px from the player and move at 70+ px/s, so they reach the player in under a second. Spawns can also be lethal the instant they appear.
+4. **Feels bad:** nothing is forgiving at the start or after a restart. There is no grace period, so the player can die before they have moved.
+5. **Boring:** orbs are the only pickup. The only escalation is more hazards and faster speeds, with no decision to make beyond dodging.
+6. **Boring:** the "danger" counter goes up on a timer, but nothing visible changes except the numbers. Seekers only appear after 25 s, so the early game is flat.
+7. **Minor:** the "Press ENTER" prompt pulses down to nearly invisible on the menu, so it is hard to read at its dimmest.
+8. **Minor:** the idle run never reached game over (`final: null`). The window may have been too short, so I can't confirm the idle case from this report.
+9. **Missing:** no feedback on the score gain (no floating numbers), no run stats on the game-over screen, and the pause screen doesn't mention Esc.
+
+**Changes made:** a 1.5 s grace period after start and restart, hazards that fade in for 0.8 s before they can hurt, slower early bouncer speeds, and bouncers that spawn at least 220 px away. Seekers now enter from the edges. Violet shield orbs grant 4 s in which hazards are smashed for points. Quick pickups build a combo multiplier (up to x4). Score popups, a shield timer, Esc to pause, run stats on the game-over screen, and a brighter menu prompt were also added. The `window.gameState` hook still reports exactly `score` and `state`.

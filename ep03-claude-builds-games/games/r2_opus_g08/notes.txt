@@ -1,0 +1,21 @@
+## Playtest notes
+
+1. **Works:** the game loads with no console errors and runs at a steady 60 fps. The test hook updates correctly through menu, playing and over, and restarting works without a page reload. The bot scored all 8 of 8 points.
+2. **Menu (menu.png):** it looks good and the legend is clear, but there is too much text. Five lines of rules is a lot to read before playing.
+3. **In play (f01/f03/f05):** the visuals are readable. The player glows orange, orbs are cool-coloured and hazards are red spikes. The HUD (score bar, lives, dash meter, shield timer) shows up correctly.
+4. **Slow start:** levels only change every 15 seconds, so the first 15 seconds are three slow spike mines and nothing else. Too calm for an arcade game.
+5. **Standing still pays off:** an idle player is only punished by hazards that are lightly aimed at them. In the idle run, waiting in a safe spot never ended in a game over.
+6. **Orb showers feel flat:** grabbing all 6 orbs of a shower gives no extra reward, so a good grab feels like nothing special.
+7. **One life left has little tension:** the only sign is a "LAST LIFE!" popup that disappears quickly. There is no ongoing sound or visual cue.
+8. **Game-over screen is static:** the hazards freeze, so the end screen looks like a paused frame.
+9. **end.png** shows a clean new run after restart, so state resets properly.
+
+## What I changed
+- Levels now change every 13 seconds instead of 15, and hazards ramp up a little faster.
+- Standing still for 3 seconds shows a "Keep moving!" warning. After that, new hazards are hunters that chase you.
+- Grabbing all 6 orbs of an orb shower gives a "SHOWER CLEAR" bonus of +50, with its own sound.
+- On your last life you hear a heartbeat and the screen edges pulse red.
+- Hazards keep drifting slowly behind the game-over and win screens.
+- The menu rules are cut down and include the new "keep moving" tip.
+
+I haven't re-run the playtest bot on the new version. Nothing in the test hook, the menu-to-game start or the restart flow was changed.

@@ -1,0 +1,94 @@
+Below is a unified diff between two consecutive versions of a small HTML arcade game. Read ONLY the diff. List the player-visible features/mechanics ADDED and REMOVED (plain text, one short line each; ignore refactors). Then answer with a final line exactly: COUNTS added=<int> removed=<int>
+
+--- 
++++ 
+@@ -36,4 +36,3 @@
+   const CLOSE_RANGE = 18;     // extra distance that counts as a close call
+-  const CLOSE_BONUS = 2;      // points for a close call
+-  const CLOSE_COOLDOWN = 1.5; // seconds before the same hazard can grant another close call
++  const CLOSE_BONUS = 2;      // points for a close call (once per pass of a hazard)
+   const PLAYER_SPEED = 330;   // px/s
+@@ -61,2 +60,3 @@
+   let shake = 0;
++  let flash = 0;              // red screen flash after a hit
+   let grace = 0;              // seconds of invulnerability left
+@@ -191,3 +191,3 @@
+       age: 0,
+-      closeCd: 0,
++      near: false,             // true while the player is inside its close-call range
+       // dasher-only state: 'drift' -> 'wind' (telegraph) -> 'lunge' -> 'drift'
+@@ -256,2 +256,3 @@
+     shake = 0;
++    flash = 0;
+     paused = false;
+@@ -288,2 +289,3 @@
+     shake = 1;
++    flash = 1;
+     burst(player.x, player.y, '255,80,120', 40, 320);
+@@ -377,3 +379,2 @@
+       h.age += dt;
+-      h.closeCd = Math.max(0, h.closeCd - dt);
+       h.spin += dt * (h.type === 'seeker' ? 3 : 1.5) * h.dir;
+@@ -422,3 +423,3 @@
+     // Hazard collisions: shield smashes them, otherwise they are lethal once faded in.
+-    // Passing close (without touching) earns a small near-miss bonus.
++    // Passing close (without touching) earns a near-miss bonus, once per pass of each hazard.
+     const reach = HAZARD_HIT + PLAYER_HIT;
+@@ -440,7 +441,10 @@
+         }
+-      } else if (shieldT <= 0 && grace <= 0 && d < reach + CLOSE_RANGE && h.closeCd <= 0) {
+-        h.closeCd = CLOSE_COOLDOWN;
+-        score += CLOSE_BONUS;
+-        popups.push({ x: player.x, y: player.y - 18, text: `CLOSE +${CLOSE_BONUS}`, life: 0.8, rgb: '255,255,255' });
+-        sfx.close();
++      } else {
++        const near = d < reach + CLOSE_RANGE;
++        if (near && !h.near && shieldT <= 0 && grace <= 0) {
++          score += CLOSE_BONUS;
++          popups.push({ x: player.x, y: player.y - 18, text: `CLOSE +${CLOSE_BONUS}`, life: 0.8, rgb: '255,255,255' });
++          sfx.close();
++        }
++        h.near = near;
+       }
+@@ -594,2 +598,20 @@
+ 
++  // Off-screen chasers show a pulsing marker at the edge where they will come in
++  function drawEdgeWarnings() {
++    if (state !== 'playing') return;
++    const p = (Math.sin(performance.now() / 120) + 1) / 2;
++    for (const h of hazards) {
++      if (h.type !== 'seeker') continue;
++      if (h.x >= 0 && h.x <= W && h.y >= 0 && h.y <= H) continue;
++      const x = Math.max(16, Math.min(W - 16, h.x));
++      const y = Math.max(16, Math.min(H - 16, h.y));
++      ctx.save();
++      ctx.shadowColor = '#ff9a3c';
++      ctx.shadowBlur = 14;
++      ctx.fillStyle = `rgba(255,154,60,${0.5 + p * 0.4})`;
++      ctx.beginPath(); ctx.arc(x, y, 5 + p * 2, 0, Math.PI * 2); ctx.fill();
++      ctx.restore();
++    }
++  }
++
+   function drawPlayer() {
+@@ -738,2 +760,4 @@
+ 
++    text(`Best: ${best}`, W / 2, 492, 18, '#ffd23f');
++
+     ctx.save();
+@@ -792,2 +816,3 @@
+       drawHazards();
++      drawEdgeWarnings();
+       drawTrail();
+@@ -798,2 +823,7 @@
+     ctx.restore();
++
++    if (flash > 0 && state !== 'menu') {
++      ctx.fillStyle = `rgba(255,60,110,${flash * 0.35})`;
++      ctx.fillRect(0, 0, W, H);
++    }
+ 
+@@ -900,2 +930,3 @@
+     if (state === 'over' || state === 'won') cooldown -= dt;
++    flash = Math.max(0, flash - dt * 2.5);
+     updateParticles(dt);
